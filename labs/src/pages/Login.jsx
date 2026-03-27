@@ -1,0 +1,69 @@
+import axios from 'axios'
+import React, { useContext, useState } from 'react'
+import { LabsContext } from '../context/LabsContext'
+import { toast } from 'react-toastify'
+
+const Login = () => {
+
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL
+  const { setLabsToken } = useContext(LabsContext)
+
+  const onSubmitHandler = async (event) => {
+    event.preventDefault()
+    try {
+      const { data } = await axios.post(backendUrl + '/api/labs/login', { email, password })
+      if (data.success) {
+        setLabsToken(data.token)
+        localStorage.setItem('labsToken', data.token)
+        toast.success('Welcome, Labs Admin!')
+      } else {
+        toast.error(data.message)
+      }
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
+
+  return (
+    <div className='min-h-[100vh] flex items-center justify-center bg-gradient-to-br from-violet-50 to-purple-100'>
+      <form onSubmit={onSubmitHandler} className='bg-white rounded-2xl shadow-xl p-8 w-full max-w-sm'>
+        <div className='flex flex-col items-center mb-6'>
+          <div className='w-14 h-14 bg-violet-600 rounded-xl flex items-center justify-center mb-3'>
+            <svg xmlns="http://www.w3.org/2000/svg" className='w-8 h-8 text-white' fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 3H5a2 2 0 00-2 2v4m6-6h10a2 2 0 012 2v4M9 3v18m0 0h10a2 2 0 002-2V9M9 21H5a2 2 0 01-2-2V9m0 0h18" />
+            </svg>
+          </div>
+          <h2 className='text-2xl font-bold text-gray-800'>Labs Admin</h2>
+          <p className='text-gray-500 text-sm mt-1'>HOSPITRA Diagnostic Labs Portal</p>
+        </div>
+
+        <div className='flex flex-col gap-4'>
+          <div>
+            <label className='text-sm font-medium text-gray-700 block mb-1'>Email</label>
+            <input
+              onChange={(e) => setEmail(e.target.value)} value={email}
+              className='border border-gray-300 rounded-lg w-full p-2.5 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none text-sm'
+              type="email" placeholder='labs@hospital.com' required
+            />
+          </div>
+          <div>
+            <label className='text-sm font-medium text-gray-700 block mb-1'>Password</label>
+            <input
+              onChange={(e) => setPassword(e.target.value)} value={password}
+              className='border border-gray-300 rounded-lg w-full p-2.5 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none text-sm'
+              type="password" placeholder='••••••••' required
+            />
+          </div>
+          <button className='bg-violet-600 hover:bg-violet-700 text-white w-full py-2.5 rounded-lg text-sm font-medium transition-colors mt-2'>
+            Sign In
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
+export default Login
