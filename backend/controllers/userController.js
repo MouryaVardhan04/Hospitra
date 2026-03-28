@@ -6,6 +6,7 @@ import doctorModel from "../models/doctorModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import labAssignmentModel from "../models/labAssignmentModel.js";
 import pharmacyInvoiceModel from "../models/pharmacyInvoiceModel.js";
+import billingInvoiceModel from "../models/billingInvoiceModel.js";
 import { v2 as cloudinary } from 'cloudinary'
 import stripe from "stripe";
 import razorpay from 'razorpay';
@@ -323,6 +324,18 @@ const getPharmacyInvoices = async (req, res) => {
     }
 }
 
+// API to get user billing invoices
+const getBillingInvoices = async (req, res) => {
+    try {
+        const { userId } = req.body
+        const invoices = await billingInvoiceModel.find({ patientId: userId }).sort({ createdAt: -1 })
+        res.json({ success: true, invoices })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
 // API to get user appointments for frontend my-appointments page
 const listAppointment = async (req, res) => {
     try {
@@ -460,5 +473,6 @@ export {
     paymentStripe,
     verifyStripe,
     getLabReports,
-    getPharmacyInvoices
+    getPharmacyInvoices,
+    getBillingInvoices
 }

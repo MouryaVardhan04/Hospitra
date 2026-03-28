@@ -45,7 +45,10 @@ const Verify = () => {
 
     return (
         <div className='min-h-[60vh] flex items-center justify-center'>
-            <div className="w-20 h-20 border-4 border-gray-300 border-t-4 border-t-primary rounded-full animate-spin"></div>
+            <div className='bg-white border border-slate-200 rounded-2xl px-8 py-10 shadow-sm flex flex-col items-center gap-4'>
+                <div className="w-16 h-16 border-4 border-slate-200 border-t-4 border-t-primary rounded-full animate-spin"></div>
+                <p className='text-sm text-slate-600'>Verifying payment status...</p>
+            </div>
         </div>
     )
 }

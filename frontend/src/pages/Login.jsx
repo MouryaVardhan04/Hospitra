@@ -134,21 +134,31 @@ const Login = () => {
   }
 
   return (
-    <form onSubmit={onSubmitHandler} className='min-h-[80vh] flex items-center py-8'>
-      <div className='w-full max-w-3xl mx-auto bg-white border border-[#E6EAF2] rounded-2xl shadow-xl overflow-hidden'>
-        <div className='flex flex-col gap-4 p-8 sm:p-10 text-[#4B5563] text-sm'>
+    <form onSubmit={onSubmitHandler} className='min-h-[80vh] flex items-center py-10'>
+      <div className='w-full max-w-5xl mx-auto bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden md:grid md:grid-cols-[1fr_1.2fr]'>
+        <div className='hidden md:flex flex-col justify-between p-10 bg-gradient-to-br from-primary via-[#5b6bff] to-[#22c55e] text-white'>
           <div>
-            <p className='text-2xl font-semibold text-[#1F2937]'>{state === 'Sign Up' ? 'Create Account' : 'Login'}</p>
+            <p className='text-sm uppercase tracking-[0.3em] text-white/70'>Welcome</p>
+            <h2 className='text-3xl font-semibold mt-3'>Your care, connected.</h2>
+            <p className='text-sm text-white/80 mt-3'>Manage appointments, lab reports, and billing in one secure place.</p>
+          </div>
+          <div className='text-xs text-white/80'>
+            <p>Trusted by thousands of patients and providers.</p>
+          </div>
+        </div>
+        <div className='flex flex-col gap-4 p-8 sm:p-10 text-slate-600 text-sm'>
+          <div>
+            <p className='text-2xl font-semibold text-slate-800'>{state === 'Sign Up' ? 'Create Account' : 'Login'}</p>
             <p className='mt-1'>{state === 'Sign Up' ? 'Create your profile to get started.' : 'Welcome back. Please log in.'}</p>
           </div>
         {state === 'Sign Up' && step === 'form' && (
           <>
             <div className='w-full flex flex-col items-center gap-2'>
-              <p className='text-sm text-[#6B7280]'>Profile Image (optional)</p>
-              <label htmlFor='profile-image-input' className='h-24 w-24 rounded-full border-2 border-dashed border-[#DADADA] flex items-center justify-center cursor-pointer overflow-hidden bg-[#FAFAFA]'>
+              <p className='text-sm text-slate-500'>Profile Image (optional)</p>
+              <label htmlFor='profile-image-input' className='h-24 w-24 rounded-full border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer overflow-hidden bg-slate-50'>
                 {profilePreview
                   ? <img src={profilePreview} alt='Profile preview' className='h-full w-full object-cover' />
-                  : <span className='text-3xl text-[#9CA3AF]'>+</span>
+                  : <span className='text-3xl text-slate-400'>+</span>
                 }
               </label>
               <input id='profile-image-input' onChange={handleProfileImageChange} className='hidden' type='file' accept='image/*' />
@@ -156,27 +166,27 @@ const Login = () => {
             <div className='w-full grid grid-cols-1 sm:grid-cols-2 gap-4'>
             <div className='w-full '>
               <p>Full Name</p>
-              <input onChange={(e) => setName(e.target.value)} value={name} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="text" />
+              <input onChange={(e) => setName(e.target.value)} value={name} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="text" />
             </div>
             <div className='w-full '>
               <p>Phone</p>
-              <input onChange={(e) => setPhone(e.target.value)} value={phone} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="text" />
+              <input onChange={(e) => setPhone(e.target.value)} value={phone} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="text" />
             </div>
             <div className='w-full '>
               <p>Email</p>
-              <input onChange={(e) => setEmail(e.target.value)} value={email} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="email" />
+              <input onChange={(e) => setEmail(e.target.value)} value={email} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="email" />
             </div>
             <div className='w-full '>
               <p>Password</p>
-              <input onChange={(e) => setPassword(e.target.value)} value={password} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="password" />
+              <input onChange={(e) => setPassword(e.target.value)} value={password} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="password" />
             </div>
             <div className='w-full '>
               <p>Date of Birth</p>
-              <input onChange={(e) => setDob(e.target.value)} value={dob} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="date" />
+              <input onChange={(e) => setDob(e.target.value)} value={dob} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="date" />
             </div>
             <div className='w-full '>
               <p>Gender</p>
-              <select onChange={(e) => setGender(e.target.value)} value={gender} className='border border-[#DADADA] rounded w-full p-2 mt-1'>
+              <select onChange={(e) => setGender(e.target.value)} value={gender} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50'>
                 <option value=''>Select</option>
                 <option value='Male'>Male</option>
                 <option value='Female'>Female</option>
@@ -185,19 +195,19 @@ const Login = () => {
             </div>
             <div className='w-full '>
               <p>Height (cm)</p>
-              <input onChange={(e) => setHeight(e.target.value)} value={height} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="number" />
+              <input onChange={(e) => setHeight(e.target.value)} value={height} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="number" />
             </div>
             <div className='w-full '>
               <p>Weight (kg)</p>
-              <input onChange={(e) => setWeight(e.target.value)} value={weight} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="number" />
+              <input onChange={(e) => setWeight(e.target.value)} value={weight} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="number" />
             </div>
             <div className='w-full '>
               <p>Address Line 1</p>
-              <input onChange={(e) => setAddressLine1(e.target.value)} value={addressLine1} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="text" />
+              <input onChange={(e) => setAddressLine1(e.target.value)} value={addressLine1} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="text" />
             </div>
             <div className='w-full '>
               <p>Address Line 2</p>
-              <input onChange={(e) => setAddressLine2(e.target.value)} value={addressLine2} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="text" />
+              <input onChange={(e) => setAddressLine2(e.target.value)} value={addressLine2} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="text" />
             </div>
           </div>
           </>
@@ -206,11 +216,11 @@ const Login = () => {
           <>
             <div className='w-full '>
               <p>Email</p>
-              <input onChange={(e) => setEmail(e.target.value)} value={email} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="email" />
+              <input onChange={(e) => setEmail(e.target.value)} value={email} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="email" />
             </div>
             <div className='w-full '>
               <p>Password</p>
-              <input onChange={(e) => setPassword(e.target.value)} value={password} className='border border-[#DADADA] rounded w-full p-2 mt-1' type="password" />
+              <input onChange={(e) => setPassword(e.target.value)} value={password} className='border border-slate-200 rounded-lg w-full p-2.5 mt-1 bg-slate-50' type="password" />
             </div>
           </>
         )}
@@ -225,7 +235,7 @@ const Login = () => {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className='border border-[#DADADA] rounded w-12 h-12 text-center text-lg'
+                  className='border border-slate-200 rounded-lg w-12 h-12 text-center text-lg bg-slate-50'
                   type='text'
                   inputMode='numeric'
                   maxLength={1}
@@ -234,7 +244,7 @@ const Login = () => {
             </div>
           </div>
         )}
-          <button className='bg-primary text-white w-full py-2.5 mt-2 rounded-md text-base font-medium hover:opacity-95 transition'>
+          <button className='bg-primary text-white w-full py-2.5 mt-2 rounded-full text-base font-medium hover:opacity-95 transition'>
             {state === 'Sign Up' ? (step === 'otp' ? 'Verify OTP & Register' : 'Send OTP') : 'Login'}
           </button>
           {state === 'Sign Up'

@@ -1,0 +1,77 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Pharmacy Invoice</title>
+    <style>
+      @page { size: A4; margin: 20mm; }
+      body { font-family: Arial, sans-serif; color: #111827; }
+      h1 { font-size: 20px; margin-bottom: 6px; }
+      .muted { color: #6b7280; font-size: 12px; }
+      .section { margin-top: 12px; }
+      table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 12px; }
+      th, td { border: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+      th { background: #f9fafb; }
+      .total { text-align: right; font-weight: 700; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .card { border: 1px solid #e5e7eb; border-radius: 8px; padding: 10px; }
+    </style>
+  </head>
+  <body>
+    <h1>Hospitra Pharmacy Invoice</h1>
+    <div class="muted">Invoice Date: 24/03/2026, 00:14:08</div>
+
+    <div class="section grid">
+      <div class="card">
+        <div class="muted">Patient Details</div>
+        <div><strong>Mourya</strong></div>
+        <div>ID: 69c02090b87501b30e69eaec</div>
+        <div>Phone: 9381340810</div>
+        <div>Email: mouryabhukya04@gmail.com</div>
+      </div>
+      <div class="card">
+        <div class="muted">Doctor & Payment</div>
+        <div>Doctor: -</div>
+        <div>Doctor ID: -</div>
+        <div>Payment: Cash</div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Medicine</th>
+          <th>Dosage</th>
+          <th>Qty</th>
+          <th>Price</th>
+          <th>Line Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        
+      <tr>
+        <td>Paracetamol 500mg</td>
+        <td>500mg</td>
+        <td>1</td>
+        <td>₹50</td>
+        <td>₹50</td>
+      </tr>
+    
+      <tr>
+        <td>Amoxicillin 250mg</td>
+        <td>250mg</td>
+        <td>1</td>
+        <td>₹120</td>
+        <td>₹120</td>
+      </tr>
+    
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="4" class="total">Total</td>
+          <td class="total">₹170</td>
+        </tr>
+      </tfoot>
+    </table>
+  </body>
+</html>

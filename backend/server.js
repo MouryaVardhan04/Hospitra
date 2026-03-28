@@ -28,7 +28,7 @@ connectDB()
       app.use('/api/debug', debugRouter)
       console.log('[debug] email routes enabled')
     }
-    app.listen(port, () => console.log(`Server started on PORT:${port}`))
+    app.listen(port, '0.0.0.0', () => console.log(`Server started on PORT:${port}`))
   })
   .catch((err) => {
     console.error('Failed to connect to MongoDB:', err?.message || err)

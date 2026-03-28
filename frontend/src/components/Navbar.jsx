@@ -17,23 +17,23 @@ const Navbar = () => {
   }
 
   return (
-    <div className='sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-gray-200'>
-      <div className='max-w-6xl mx-auto flex items-center justify-between px-4 py-3'>
+    <div className='sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200'>
+      <div className='max-w-6xl mx-auto flex items-center justify-between px-4 py-4'>
         {/* Logo */}
         <img onClick={() => navigate('/')} className='w-40 cursor-pointer' src={assets.logo} alt='Logo' />
 
         {/* Desktop Nav */}
-        <ul className='md:flex items-center gap-6 font-medium hidden'>
-          <NavLink to='/' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-[#2b2b2b]'}`}>
+        <ul className='md:flex items-center gap-6 font-medium hidden text-sm'>
+          <NavLink to='/' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-slate-600'}`}>
             HOME
           </NavLink>
-          <NavLink to='/doctors' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-[#2b2b2b]'}`}>
+          <NavLink to='/doctors' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-slate-600'}`}>
             ALL DOCTORS
           </NavLink>
-          <NavLink to='/about' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-[#2b2b2b]'}`}>
+          <NavLink to='/about' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-slate-600'}`}>
             ABOUT
           </NavLink>
-          <NavLink to='/contact' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-[#2b2b2b]'}`}>
+          <NavLink to='/contact' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-slate-600'}`}>
             CONTACT
           </NavLink>
         </ul>
@@ -54,7 +54,7 @@ const Navbar = () => {
               </div>
             </div>
           ) : (
-            <button onClick={() => navigate('/login')} className='bg-primary text-white px-6 py-2 rounded-full font-light hidden md:block'>Create account</button>
+            <button onClick={() => navigate('/login')} className='bg-primary text-white px-6 py-2 rounded-full font-medium shadow-sm hidden md:block hover:opacity-90'>Create account</button>
           )}
 
           {/* Mobile trigger */}

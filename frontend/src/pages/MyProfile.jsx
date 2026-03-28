@@ -54,7 +54,12 @@ const MyProfile = () => {
     }
 
     return userData ? (
-        <div className='max-w-5xl mx-auto px-4 py-6'>
+        <div className='py-8'>
+            <div className='flex flex-col gap-2 mb-6'>
+                <p className='text-sm uppercase tracking-[0.3em] text-slate-400'>Profile</p>
+                <h1 className='text-3xl font-semibold text-slate-800'>My Profile</h1>
+                <p className='text-sm text-slate-500'>Manage your personal information and preferences.</p>
+            </div>
             <div className='grid md:grid-cols-3 gap-6'>
                 <div className='md:col-span-1'>
                     <div className='bg-white rounded-xl shadow-sm p-6 flex flex-col items-center gap-4'>

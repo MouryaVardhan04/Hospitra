@@ -1,6 +1,7 @@
 async function callGeminiApi({ apiKey, contents }) {
   if (!apiKey) throw new Error('GEMINI_KEY not configured')
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`
+  const model = process.env.GEMINI_MODEL || 'gemini-3-flash-preview'
+  const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`
 
   const res = await fetch(url, {
     method: 'POST',
