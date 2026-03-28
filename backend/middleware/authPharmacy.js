@@ -11,6 +11,7 @@ const authPharmacy = async (req, res, next) => {
         if (token_decode !== process.env.PHARMACY_EMAIL + process.env.PHARMACY_PASSWORD) {
             return res.json({ success: false, message: 'Not Authorized Login Again' })
         }
+        req.auditActor = { type: 'pharmacy', id: process.env.PHARMACY_EMAIL }
         next()
     } catch (error) {
         console.log(error)

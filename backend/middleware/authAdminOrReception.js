@@ -13,6 +13,11 @@ const authAdminOrReception = async (req, res, next) => {
         if (token_decode !== adminKey && token_decode !== receptionKey) {
             return res.json({ success: false, message: 'Not Authorized Login Again' })
         }
+        if (token_decode === adminKey) {
+            req.auditActor = { type: 'admin', id: process.env.ADMIN_EMAIL }
+        } else {
+            req.auditActor = { type: 'reception', id: process.env.RECEPTION_EMAIL }
+        }
         next()
     } catch (error) {
         console.log(error)

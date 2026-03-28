@@ -10,6 +10,7 @@ import labAssignmentModel from "../models/labAssignmentModel.js";
 import labCatalogModel from "../models/labCatalogModel.js";
 import feesCatalogModel from "../models/feesCatalogModel.js";
 import billingInvoiceModel from "../models/billingInvoiceModel.js";
+import auditLogModel from "../models/auditLogModel.js";
 import { sendAppointmentBookedEmail, sendAppointmentCancelledEmail } from "../services/emailService.js";
 import { sendBillingInvoiceEmail } from "../services/emailService.js";
 import { generateBillingInvoicePdf } from "../services/pdfService.js";
@@ -769,6 +770,35 @@ const createBillingInvoice = async (req, res) => {
     }
 }
 
+// API to list audit logs (admin only)
+const getAuditLogs = async (req, res) => {
+    try {
+        const { page = 1, limit = 50, actorType, action, status, from, to } = req.query
+        const filters = {}
+        if (actorType) filters.actorType = actorType
+        if (action) filters.action = new RegExp(action, 'i')
+        if (status) filters.statusCode = Number(status)
+        if (from || to) {
+            filters.createdAt = {}
+            if (from) filters.createdAt.$gte = Number(from)
+            if (to) filters.createdAt.$lte = Number(to)
+        }
+
+        const safeLimit = Math.min(Number(limit) || 50, 200)
+        const skip = (Number(page) - 1) * safeLimit
+
+        const [logs, total] = await Promise.all([
+            auditLogModel.find(filters).sort({ createdAt: -1 }).skip(skip).limit(safeLimit),
+            auditLogModel.countDocuments(filters)
+        ])
+
+        res.json({ success: true, logs, total, page: Number(page), limit: safeLimit })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
 export {
     loginAdmin,
     loginReception,
@@ -785,5 +815,6 @@ export {
     getLabCatalog,
     updateLabCatalog,
     getFeesCatalog,
-    updateFeesCatalog
+    updateFeesCatalog,
+    getAuditLogs
 }

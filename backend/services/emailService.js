@@ -14,9 +14,19 @@ function getTransporter() {
       console.warn('Email disabled: EMAIL_USER/EMAIL_PASS not set')
       return null
     }
+    const host = process.env.SMTP_HOST
+    const port = process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : undefined
+    const secure = process.env.SMTP_SECURE === 'true'
+
     transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user, pass }
+      service: host ? undefined : 'gmail',
+      host: host || undefined,
+      port: port || undefined,
+      secure: host ? secure : undefined,
+      auth: { user, pass },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
     })
   }
   return transporter

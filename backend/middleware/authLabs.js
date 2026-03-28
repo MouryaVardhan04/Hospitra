@@ -11,6 +11,7 @@ const authLabs = async (req, res, next) => {
         if (token_decode !== process.env.LABS_EMAIL + process.env.LABS_PASSWORD) {
             return res.json({ success: false, message: 'Not Authorized Login Again' })
         }
+        req.auditActor = { type: 'labs', id: process.env.LABS_EMAIL }
         next()
     } catch (error) {
         console.log(error)

@@ -12,6 +12,7 @@ import { verifyEmailTransport } from './services/emailService.js'
 import chatRouter from './routes/chatRoute.js'
 import debugRouter from './routes/debugRoute.js'
 import { seedPharmacyMedicines } from "./seed/pharmacySeed.js"
+import auditLogger from './middleware/auditLogger.js'
 
 // app config
 const app = express()
@@ -38,6 +39,7 @@ connectDB()
 // middlewares
 app.use(express.json())
 app.use(cors())
+app.use(auditLogger)
 
 // api endpoints
 app.use("/api/user", userRouter)
