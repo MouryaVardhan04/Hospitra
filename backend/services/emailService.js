@@ -50,6 +50,33 @@ async function sendMail({ to, subject, html, attachments }) {
   return info
 }
 
+async function sendResendMail({ to, subject, html }) {
+  const apiKey = process.env.RESEND_API_KEY
+  if (!apiKey) return null
+  const fromAddress = process.env.RESEND_FROM || process.env.EMAIL_FROM || 'Hospitra <onboarding@resend.dev>'
+
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      from: fromAddress,
+      to: [to],
+      subject,
+      html
+    })
+  })
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data?.message || 'Resend email failed')
+  }
+
+  return await res.json().catch(() => ({}))
+}
+
 function invoiceEmailWrapper(bodyHtml) {
   return `<!DOCTYPE html>
 <html lang="en">
@@ -304,6 +331,9 @@ export async function sendOtpEmail({ to, userName, otp }) {
       <p style="margin: 0; color: #6B7280;">If you didn’t request this, please ignore this email.</p>
     </div>
   `
+  if (process.env.RESEND_API_KEY) {
+    return await sendResendMail({ to, subject: 'Your Hospitra OTP', html })
+  }
   return await sendMail({ to, subject: 'Your Hospitra OTP', html })
 }
 
