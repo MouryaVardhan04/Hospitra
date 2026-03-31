@@ -1,0 +1,91 @@
+# Labs Module: Descriptive Documentation
+
+## Workflow Description
+The labs module manages laboratory operations, including test assignments, report generation, and communication with patients and doctors. Lab staff log in to their portal to view pending test assignments, upload lab results, and update the status of each test. Patients and doctors can access lab reports through their respective portals. The system ensures that all lab activities are tracked and that reports are securely delivered to the right users.
+
+## Database Structure (with Explanation)
+- **Lab Model:** Stores information about each lab, such as name, location, and contact details.
+- **Lab Catalog Model:** Contains the list of available lab tests and their details.
+- **Lab Assignment Model:** Tracks which tests have been assigned to which patients, including status and deadlines.
+- **Lab Report Model:** Stores the results of lab tests, linked to both the patient and the assignment.
+- **User Model:** References patients who are assigned lab tests and receive reports.
+
+## Roles (with Responsibilities)
+- **Lab Staff:** Manages test assignments, uploads lab reports, and updates test statuses.
+- **User (Patient):** Receives lab assignments and can view their lab reports.
+- **Doctor:** Requests lab tests for patients and reviews the results.
+- **Admin:** Oversees lab operations, manages lab staff, and monitors assignments and reports.
+
+## API Endpoints (Labs-Focused Example)
+- `GET /api/labs/tests` — List all available lab tests.
+- `POST /api/labs/assign-test` — Assign a lab test to a patient.
+- `GET /api/labs/assignments` — List all lab assignments (lab staff/admin view).
+- `POST /api/labs/upload-report` — Upload a lab report for a specific assignment.
+- `GET /api/user/lab-reports` — (User) View their own lab reports.
+- `GET /api/doctor/lab-reports` — (Doctor) View lab reports for their patients.
+
+## Entity-Relationship (ER) Diagram: Textual Description
+- **Lab:** Represents the laboratory entity.
+- **LabCatalog:** Lists all available lab tests.
+- **LabAssignment:** Links users (patients) to specific lab tests and tracks their status.
+- **LabReport:** Contains the results of lab tests, linked to assignments and users.
+- **User:** Patients who are assigned lab tests and receive reports.
+- **Doctor:** Requests lab tests and reviews reports.
+
+**Relationships:**
+- A lab offers many lab tests (catalog).
+- A lab assignment links a user to a specific test and lab.
+- Each lab assignment can have one lab report.
+- Doctors can request multiple lab assignments for their patients.
+- Users can have multiple lab assignments and reports.
+
+## ER Diagram (Mermaid Syntax)
+```mermaid
+erDiagram
+    LAB ||--o{ LABCATALOG : offers
+    LAB ||--o{ LABASSIGNMENT : manages
+    USER ||--o{ LABASSIGNMENT : receives
+    DOCTOR ||--o{ LABASSIGNMENT : requests
+    LABASSIGNMENT ||--|| LABREPORT : generates
+    USER ||--o{ LABREPORT : receives
+
+    LAB {
+        string labId PK
+        string name
+        string location
+        string contact
+    }
+    LABCATALOG {
+        string testId PK
+        string name
+        string description
+        float price
+    }
+    LABASSIGNMENT {
+        string assignmentId PK
+        string userId FK
+        string labId FK
+        string testId FK
+        string doctorId FK
+        string status
+        datetime assignedAt
+        datetime dueDate
+    }
+    LABREPORT {
+        string reportId PK
+        string assignmentId FK
+        string userId FK
+        string results
+        datetime uploadedAt
+    }
+    USER {
+        string userId PK
+        string name
+        string email
+    }
+    DOCTOR {
+        string doctorId PK
+        string name
+        string specialization
+    }
+```

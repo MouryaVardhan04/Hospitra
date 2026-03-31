@@ -1,0 +1,162 @@
+
+# Project Overview: Descriptive Documentation
+
+## Workflow Description
+This healthcare management system is designed to streamline the operations of a hospital or clinic by integrating multiple user roles and automating key processes. The workflow begins with users (patients) registering and logging in to the system. Authentication is handled securely using JWT tokens. Once logged in, users can manage their profiles, including updating personal information and uploading profile images.
+
+Patients can book appointments with doctors, view their upcoming and past appointments, and cancel them if needed. The system supports online payments for appointments, integrating with both Razorpay and Stripe gateways. After booking, users can verify their payments through dedicated endpoints.
+
+Lab reports and pharmacy invoices are accessible to users, allowing them to keep track of their medical records and purchases. Real-time chat functionality, powered by Socket.io, enables seamless communication between patients and staff (doctors, admins, etc.). Each major role—admin, doctor, lab, pharmacy, and reception—has its own dedicated frontend portal and set of backend APIs, ensuring that workflows are tailored to the needs of each department.
+
+## Database Structure (with Explanation)
+The backend uses MongoDB with Mongoose models to represent the main entities:
+
+- **User Model:** Stores patient details such as name, email, hashed password, contact info, demographic data, and links to their assigned doctor.
+- **Doctor Model:** Contains doctor-specific information, including specialization and schedule.
+- **Appointment Model:** Represents the relationship between users and doctors, storing appointment times, status, and payment details.
+- **Lab Models:** Manage lab assignments, available tests, and generated reports for users.
+- **Pharmacy Models:** Track medicines, inventory, and invoices for user purchases.
+- **Audit Log Model:** Records important actions and events for traceability and compliance.
+- **Billing Invoice Model:** Handles payment and billing records for various services.
+- **Chat Message Model:** Stores the content and metadata of real-time chat conversations between users and staff.
+
+## User Roles (with Responsibilities)
+- **User (Patient):** Can register, log in, manage their profile, book/cancel appointments, make payments, view lab reports and pharmacy invoices, and chat with staff.
+- **Doctor:** Manages their appointments, consults with patients, updates medical records and lab reports, and communicates via chat.
+- **Admin:** Oversees the entire system, manages users, doctors, labs, pharmacy, and configures system-wide settings.
+- **Lab:** Handles lab test assignments, uploads and manages lab reports for patients.
+- **Pharmacy:** Manages medicine inventory, processes and issues pharmacy invoices to patients.
+- **Reception:** Assists with appointment scheduling, patient check-ins, and supports administrative tasks.
+
+## API Endpoints (User-Focused Example)
+The system exposes RESTful API endpoints for each role. Here are some key endpoints for users:
+
+- `POST /api/user/register` — Allows a new user to register an account.
+- `POST /api/user/login` — Authenticates a user and returns a JWT token.
+- `GET /api/user/get-profile` — Retrieves the authenticated user's profile information.
+- `POST /api/user/update-profile` — Updates the user's profile, including uploading a new profile image.
+- `POST /api/user/book-appointment` — Books an appointment with a doctor.
+- `GET /api/user/appointments` — Lists all appointments for the authenticated user.
+- `POST /api/user/cancel-appointment` — Cancels a specific appointment.
+- `POST /api/user/payment-razorpay` — Initiates a payment using Razorpay.
+- `POST /api/user/verifyRazorpay` — Verifies a Razorpay payment.
+- `POST /api/user/payment-stripe` — Initiates a payment using Stripe.
+- `POST /api/user/verifyStripe` — Verifies a Stripe payment.
+- `GET /api/user/lab-reports` — Retrieves lab reports for the user.
+- `GET /api/user/pharmacy-invoices` — Retrieves pharmacy invoices for the user.
+- `GET /api/user/billing-invoices` — Retrieves billing invoices for the user.
+
+Other roles (doctor, admin, lab, pharmacy, reception) have their own sets of endpoints, tailored to their workflows and responsibilities.
+
+## Entity-Relationship (ER) Diagram: Textual Description
+The following describes the main entities and their relationships:
+
+- **User:** The central entity representing patients. Each user can have multiple appointments, lab assignments, pharmacy invoices, chat messages, and audit logs.
+- **Doctor:** Doctors are linked to appointments and can send/receive chat messages.
+- **Appointment:** Connects users and doctors, storing details about the meeting and payment.
+- **LabAssignment:** Links users to labs and lab reports.
+- **LabReport:** Contains the results of lab tests for users.
+- **PharmacyInvoice:** Represents purchases made by users at the pharmacy, containing multiple medicines.
+- **Medicine:** Items available in the pharmacy, referenced by invoices.
+- **AuditLog:** Tracks actions performed by users for security and compliance.
+- **ChatMessage:** Stores messages exchanged between users, doctors, and admins.
+
+**Relationships:**
+- A user can book many appointments with different doctors.
+- A user can have multiple lab assignments and reports.
+- A user can receive multiple pharmacy invoices, each containing several medicines.
+- Users, doctors, and admins can send and receive chat messages.
+- All significant actions are logged in the audit log.
+
+## ER Diagram (Mermaid Syntax)
+Below is a Mermaid diagram code block that can be rendered in compatible tools to visualize the relationships:
+
+```mermaid
+erDiagram
+  USER ||--o{ APPOINTMENT : books
+  DOCTOR ||--o{ APPOINTMENT : consults
+  USER ||--o{ LABASSIGNMENT : has
+  LAB ||--o{ LABASSIGNMENT : assigned
+  LABASSIGNMENT ||--|| LABREPORT : generates
+  USER ||--o{ PHARMACYINVOICE : receives
+  PHARMACYINVOICE ||--o{ MEDICINE : contains
+  USER ||--o{ CHATMESSAGE : sends
+  USER ||--o{ AUDITLOG : triggers
+  DOCTOR ||--o{ CHATMESSAGE : sends
+  ADMIN ||--o{ CHATMESSAGE : sends
+
+  USER {
+    string userId PK
+    string name
+    string email
+    string password
+    string image
+    string phone
+    string address
+    string gender
+    string dob
+    int age
+    float height
+    float weight
+    string assignedDoctorId FK
+    string assignedDoctorName
+  }
+  DOCTOR {
+    string doctorId PK
+    string name
+    string specialization
+  }
+  APPOINTMENT {
+    string appointmentId PK
+    string userId FK
+    string doctorId FK
+    datetime time
+    string status
+    object paymentInfo
+  }
+  LABASSIGNMENT {
+    string labAssignmentId PK
+    string userId FK
+    string labId FK
+    string reportId FK
+  }
+  LABREPORT {
+    string reportId PK
+    string userId FK
+    string details
+    string fileUrl
+  }
+  PHARMACYINVOICE {
+    string invoiceId PK
+    string userId FK
+    string medicines
+    float totalAmount
+  }
+  MEDICINE {
+    string medicineId PK
+    string name
+    int stock
+    float price
+  }
+  AUDITLOG {
+    string logId PK
+    string userId FK
+    string action
+    datetime timestamp
+  }
+  CHATMESSAGE {
+    string messageId PK
+    string senderId FK
+    string receiverId FK
+    string content
+    datetime timestamp
+  }
+  LAB {
+    string labId PK
+    string name
+  }
+  ADMIN {
+    string adminId PK
+    string name
+  }
+```

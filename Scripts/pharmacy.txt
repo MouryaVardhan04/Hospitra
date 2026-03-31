@@ -1,0 +1,69 @@
+# Pharmacy Module: Descriptive Documentation
+
+## Workflow Description
+The pharmacy module manages the inventory of medicines, processes prescriptions, and issues invoices for patient purchases. Pharmacists log in to their dedicated portal, where they can view and update the stock of medicines, process new prescriptions from doctors or patients, and generate invoices for each transaction. The system ensures that all medicine dispensation is tracked, and inventory levels are updated in real time. Patients can view their pharmacy invoices through their own portal.
+
+## Database Structure (with Explanation)
+- **Pharmacy Model:** Stores information about the pharmacy, such as name, location, and contact details.
+- **Medicine Model:** Contains details of each medicine, including name, stock quantity, price, and other relevant attributes.
+- **Pharmacy Invoice Model:** Records each transaction, linking patients to the medicines they have purchased, along with quantities and total cost.
+- **User Model:** References patients who receive medicines and invoices.
+
+## Roles (with Responsibilities)
+- **Pharmacist:** Manages medicine inventory, processes prescriptions, issues invoices, and updates stock levels.
+- **User (Patient):** Receives medicines and can view their pharmacy invoices.
+- **Admin:** Oversees pharmacy operations, manages pharmacists, and monitors inventory and transactions.
+
+## API Endpoints (Pharmacy-Focused Example)
+- `GET /api/pharmacy/medicines` — List all available medicines in the pharmacy.
+- `POST /api/pharmacy/add-medicine` — Add a new medicine to the inventory.
+- `PUT /api/pharmacy/update-medicine/:id` — Update details or stock of a specific medicine.
+- `DELETE /api/pharmacy/delete-medicine/:id` — Remove a medicine from the inventory.
+- `POST /api/pharmacy/issue-invoice` — Create a new pharmacy invoice for a patient purchase.
+- `GET /api/pharmacy/invoices` — List all pharmacy invoices (admin/pharmacist view).
+- `GET /api/user/pharmacy-invoices` — (User) View their own pharmacy invoices.
+
+## Entity-Relationship (ER) Diagram: Textual Description
+- **Pharmacy:** The entity representing the pharmacy itself.
+- **Medicine:** Each medicine is tracked with its details and stock.
+- **PharmacyInvoice:** Links users (patients) to the medicines they have purchased, including quantities and total cost.
+- **User:** Patients who receive medicines and invoices.
+
+**Relationships:**
+- A pharmacy manages many medicines.
+- A pharmacy invoice contains multiple medicines and is linked to a user (patient).
+- Users can have multiple pharmacy invoices.
+
+## ER Diagram (Mermaid Syntax)
+```mermaid
+erDiagram
+    PHARMACY ||--o{ MEDICINE : contains
+    PHARMACY ||--o{ PHARMACYINVOICE : issues
+    USER ||--o{ PHARMACYINVOICE : receives
+    PHARMACYINVOICE ||--o{ MEDICINE : includes
+
+    PHARMACY {
+        string pharmacyId PK
+        string name
+        string location
+        string contact
+    }
+    MEDICINE {
+        string medicineId PK
+        string name
+        int stock
+        float price
+    }
+    PHARMACYINVOICE {
+        string invoiceId PK
+        string userId FK
+        string pharmacyId FK
+        string medicines
+        float totalAmount
+    }
+    USER {
+        string userId PK
+        string name
+        string email
+    }
+```

@@ -1,0 +1,108 @@
+# Admin Module: Descriptive Documentation
+
+## Workflow Description
+The admin module provides comprehensive control over the entire hospital or clinic management system. Admins use their portal to manage users, doctors, labs, pharmacy, reception, and system settings. They can add or remove staff, monitor appointments, oversee billing and audit logs, and ensure compliance and smooth operation across all departments. The admin module is central to maintaining data integrity, security, and operational efficiency.
+
+## Database Structure (with Explanation)
+- **Admin Model:** Stores admin user details, including credentials and permissions.
+- **User Model:** Contains all patient records managed by the admin.
+- **Doctor Model:** Stores doctor profiles and schedules.
+- **Lab Model:** Manages lab staff, assignments, and reports.
+- **Pharmacy Model:** Manages pharmacy staff, medicines, and invoices.
+- **Appointment Model:** Tracks all appointments across the system.
+- **Audit Log Model:** Records all significant actions for compliance and traceability.
+- **Billing Invoice Model:** Handles all billing and payment records.
+
+## Roles (with Responsibilities)
+- **Admin:** Has full access to manage users, doctors, labs, pharmacy, reception, appointments, billing, and system settings.
+- **Doctor, Lab, Pharmacy, Reception, User:** Managed and monitored by the admin for compliance and operational purposes.
+
+## API Endpoints (Admin-Focused Example)
+- `POST /api/admin/add-user` — Add a new user (patient) to the system.
+- `POST /api/admin/add-doctor` — Add a new doctor profile.
+- `POST /api/admin/add-lab` — Add a new lab or lab staff.
+- `POST /api/admin/add-pharmacy` — Add a new pharmacy or pharmacy staff.
+- `GET /api/admin/users` — List all users (patients).
+- `GET /api/admin/doctors` — List all doctors.
+- `GET /api/admin/labs` — List all labs.
+- `GET /api/admin/pharmacies` — List all pharmacies.
+- `GET /api/admin/appointments` — View all appointments in the system.
+- `GET /api/admin/audit-logs` — View audit logs for compliance.
+- `GET /api/admin/billing-invoices` — View all billing and payment records.
+
+## Entity-Relationship (ER) Diagram: Textual Description
+- **Admin:** Represents the admin user entity.
+- **User:** Patients managed by the admin.
+- **Doctor:** Doctors managed by the admin.
+- **Lab:** Labs and lab staff managed by the admin.
+- **Pharmacy:** Pharmacies and pharmacy staff managed by the admin.
+- **Appointment:** All appointments in the system.
+- **AuditLog:** Tracks all significant actions.
+- **BillingInvoice:** All billing and payment records.
+
+**Relationships:**
+- Admin manages users, doctors, labs, pharmacies, and appointments.
+- All actions are logged in the audit log.
+- Billing invoices are linked to users and appointments.
+
+## ER Diagram (Mermaid Syntax)
+```mermaid
+erDiagram
+    ADMIN ||--o{ USER : manages
+    ADMIN ||--o{ DOCTOR : manages
+    ADMIN ||--o{ LAB : manages
+    ADMIN ||--o{ PHARMACY : manages
+    ADMIN ||--o{ APPOINTMENT : oversees
+    ADMIN ||--o{ AUDITLOG : logs
+    ADMIN ||--o{ BILLINGINVOICE : oversees
+    USER ||--o{ APPOINTMENT : books
+    DOCTOR ||--o{ APPOINTMENT : attends
+    LAB ||--o{ LABASSIGNMENT : assigns
+    PHARMACY ||--o{ PHARMACYINVOICE : issues
+    APPOINTMENT ||--o{ BILLINGINVOICE : generates
+
+    ADMIN {
+        string adminId PK
+        string name
+        string email
+        string permissions
+    }
+    USER {
+        string userId PK
+        string name
+        string email
+    }
+    DOCTOR {
+        string doctorId PK
+        string name
+        string specialization
+    }
+    LAB {
+        string labId PK
+        string name
+    }
+    PHARMACY {
+        string pharmacyId PK
+        string name
+    }
+    APPOINTMENT {
+        string appointmentId PK
+        string userId FK
+        string doctorId FK
+        datetime time
+        string status
+    }
+    AUDITLOG {
+        string logId PK
+        string adminId FK
+        string action
+        datetime timestamp
+    }
+    BILLINGINVOICE {
+        string invoiceId PK
+        string userId FK
+        string appointmentId FK
+        float amount
+        datetime issuedAt
+    }
+```

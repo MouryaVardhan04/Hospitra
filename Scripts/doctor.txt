@@ -1,0 +1,95 @@
+# Doctor Module: Descriptive Documentation
+
+## Workflow Description
+The doctor module is designed to help doctors manage their appointments, consult with patients, update medical records, and communicate with other staff and patients. Doctors log in to their portal to view their schedule, access patient information, record consultation notes, request lab tests, and review lab reports. The system streamlines the consultation process and ensures that all patient interactions and medical updates are securely tracked.
+
+## Database Structure (with Explanation)
+- **Doctor Model:** Stores doctor details, including name, specialization, contact information, and schedule.
+- **Appointment Model:** Tracks appointments between doctors and patients, including time, status, and notes.
+- **User Model:** References patients assigned to or consulting with the doctor.
+- **Lab Assignment Model:** Records lab tests requested by the doctor for patients.
+- **Lab Report Model:** Stores results of lab tests for review by the doctor.
+- **Chat Message Model:** Enables communication between doctors, patients, and other staff.
+
+## Roles (with Responsibilities)
+- **Doctor:** Manages appointments, consults with patients, updates medical records, requests and reviews lab tests, and communicates via chat.
+- **User (Patient):** Books appointments, consults with doctors, and receives medical updates.
+- **Lab Staff:** Processes lab assignments and uploads reports requested by doctors.
+- **Admin:** Oversees doctor operations, manages doctor profiles, and monitors consultations.
+
+## API Endpoints (Doctor-Focused Example)
+- `GET /api/doctor/appointments` — List all appointments for the doctor.
+- `POST /api/doctor/update-appointment` — Update appointment status or add consultation notes.
+- `GET /api/doctor/patients` — List all patients assigned to the doctor.
+- `POST /api/doctor/request-lab-test` — Request a lab test for a patient.
+- `GET /api/doctor/lab-reports` — View lab reports for the doctor's patients.
+- `GET /api/doctor/chat` — Access chat messages with patients and staff.
+
+## Entity-Relationship (ER) Diagram: Textual Description
+- **Doctor:** Represents the doctor entity.
+- **Appointment:** Links doctors to patients and tracks consultation details.
+- **User:** Patients who consult with the doctor.
+- **LabAssignment:** Records lab tests requested by the doctor for patients.
+- **LabReport:** Contains results of lab tests for review by the doctor.
+- **ChatMessage:** Stores communication between doctors, patients, and staff.
+
+**Relationships:**
+- A doctor can have multiple appointments with different patients.
+- Each appointment is linked to a user (patient).
+- Doctors can request multiple lab assignments for their patients.
+- Each lab assignment can have one lab report.
+- Doctors can send and receive multiple chat messages.
+
+## ER Diagram (Mermaid Syntax)
+```mermaid
+erDiagram
+    DOCTOR ||--o{ APPOINTMENT : attends
+    USER ||--o{ APPOINTMENT : books
+    DOCTOR ||--o{ LABASSIGNMENT : requests
+    USER ||--o{ LABASSIGNMENT : receives
+    LABASSIGNMENT ||--|| LABREPORT : generates
+    DOCTOR ||--o{ CHATMESSAGE : sends
+    USER ||--o{ CHATMESSAGE : sends
+
+    DOCTOR {
+        string doctorId PK
+        string name
+        string specialization
+        string contact
+    }
+    USER {
+        string userId PK
+        string name
+        string email
+    }
+    APPOINTMENT {
+        string appointmentId PK
+        string userId FK
+        string doctorId FK
+        datetime time
+        string status
+        string notes
+    }
+    LABASSIGNMENT {
+        string assignmentId PK
+        string userId FK
+        string doctorId FK
+        string testId FK
+        string status
+        datetime assignedAt
+    }
+    LABREPORT {
+        string reportId PK
+        string assignmentId FK
+        string userId FK
+        string results
+        datetime uploadedAt
+    }
+    CHATMESSAGE {
+        string messageId PK
+        string senderId FK
+        string receiverId FK
+        string content
+        datetime timestamp
+    }
+```

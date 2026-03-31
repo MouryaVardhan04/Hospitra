@@ -1,0 +1,72 @@
+# Reception Module: Descriptive Documentation
+
+## Workflow Description
+The reception module acts as the first point of contact for patients entering the hospital or clinic. Receptionists use their portal to register new patients, schedule and manage appointments, check in patients for their visits, and coordinate with doctors and other departments. The system helps streamline patient flow, reduce wait times, and ensure that all appointments and check-ins are accurately tracked.
+
+## Database Structure (with Explanation)
+- **User Model:** Stores patient details, including registration information and contact data.
+- **Appointment Model:** Tracks all scheduled appointments, including patient, doctor, time, and status.
+- **Reception Log Model:** Records check-in and check-out times for patients, along with any notes or special instructions.
+- **Doctor Model:** Contains information about doctors, their schedules, and availability.
+
+## Roles (with Responsibilities)
+- **Receptionist:** Registers new patients, manages appointments, checks in/out patients, and coordinates with doctors.
+- **User (Patient):** Registers at reception, checks in for appointments, and receives visit information.
+- **Doctor:** Receives appointment and check-in notifications, manages their schedule.
+- **Admin:** Oversees reception operations, manages receptionists, and monitors patient flow.
+
+## API Endpoints (Reception-Focused Example)
+- `POST /api/reception/register-patient` — Register a new patient at reception.
+- `POST /api/reception/schedule-appointment` — Schedule an appointment for a patient.
+- `GET /api/reception/appointments` — List all scheduled appointments.
+- `POST /api/reception/check-in` — Check in a patient for their appointment.
+- `POST /api/reception/check-out` — Check out a patient after their visit.
+- `GET /api/reception/logs` — View reception logs (admin/receptionist view).
+
+## Entity-Relationship (ER) Diagram: Textual Description
+- **User:** Represents patients registered at reception.
+- **Appointment:** Links users to doctors and tracks appointment details.
+- **ReceptionLog:** Records check-in and check-out events for each patient visit.
+- **Doctor:** Manages appointments and receives notifications from reception.
+
+**Relationships:**
+- A user can have multiple appointments.
+- Each appointment is linked to a doctor.
+- Each patient visit is logged in the reception log.
+- Doctors can have multiple appointments and receive check-in notifications.
+
+## ER Diagram (Mermaid Syntax)
+```mermaid
+erDiagram
+    USER ||--o{ APPOINTMENT : books
+    DOCTOR ||--o{ APPOINTMENT : attends
+    USER ||--o{ RECEPTIONLOG : visits
+    APPOINTMENT ||--o{ RECEPTIONLOG : logs
+
+    USER {
+        string userId PK
+        string name
+        string email
+        string phone
+    }
+    DOCTOR {
+        string doctorId PK
+        string name
+        string specialization
+    }
+    APPOINTMENT {
+        string appointmentId PK
+        string userId FK
+        string doctorId FK
+        datetime time
+        string status
+    }
+    RECEPTIONLOG {
+        string logId PK
+        string userId FK
+        string appointmentId FK
+        datetime checkIn
+        datetime checkOut
+        string notes
+    }
+```
