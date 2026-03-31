@@ -210,7 +210,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      <div className='grid grid-cols-1 xl:grid-cols-2 gap-6'>
+      <div className='grid grid-cols-1 xl:grid-cols-[6.5fr_3.5fr] gap-6'>
         {/* Latest Appointments */}
         <div className='bg-white border rounded-xl overflow-hidden'>
           <div className='flex items-center gap-2.5 px-6 py-4 border-b bg-gray-50'>
