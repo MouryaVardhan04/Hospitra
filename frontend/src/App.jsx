@@ -34,10 +34,8 @@ const App = () => {
         <Route path='/my-reports' element={<MyReports />} />
         <Route path='/my-profile' element={<MyProfile />} />
         <Route path='/verify' element={<Verify />} />
-        {/** Chat is rendered globally as a floating widget; route not needed */}
+        <Route path='/chat' element={<Chat />} />
       </Routes>
-      {/* Floating chat on the right end */}
-      <Chat />
       <Footer />
     </div>
   )

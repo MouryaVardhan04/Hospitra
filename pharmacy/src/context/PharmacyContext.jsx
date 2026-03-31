@@ -103,6 +103,16 @@ const PharmacyContextProvider = (props) => {
         }
     }
 
+    // Get pharmacy invoices
+    const getPharmacyInvoices = async () => {
+        try {
+            const { data } = await axios.get(backendUrl + '/api/pharmacy/invoices', { headers: { pharmtoken: pharmToken } })
+            return data
+        } catch (error) {
+            return { success: false, message: error.message }
+        }
+    }
+
     const value = {
         pharmToken, setPharmToken,
         backendUrl,
@@ -112,6 +122,7 @@ const PharmacyContextProvider = (props) => {
         deleteMedicine,
         dashData, getDashData,
         lookupPatient,
+        getPharmacyInvoices,
     }
 
     return (

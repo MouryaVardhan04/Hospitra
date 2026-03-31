@@ -1,7 +1,7 @@
 import React, { useContext } from 'react'
 import { DoctorContext } from './context/DoctorContext';
 import { AdminContext } from './context/AdminContext';
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Navbar from './components/Navbar'
@@ -16,6 +16,19 @@ import Login from './pages/Login';
 import DoctorAppointments from './pages/Doctor/DoctorAppointments';
 import DoctorDashboard from './pages/Doctor/DoctorDashboard';
 import DoctorProfile from './pages/Doctor/DoctorProfile';
+import DoctorChat from './pages/Doctor/DoctorChat';
+import DoctorConsultation from './pages/Doctor/DoctorConsultation';
+
+const ContentWrapper = ({ children }) => {
+  const { pathname } = useLocation()
+  const isChat = pathname === '/doctor-chat'
+  
+  return (
+    <div className={`flex-1 h-[calc(100vh-70px)] ${isChat ? 'overflow-hidden' : 'overflow-y-auto'} bg-[#F8F9FD]`}>
+      {children}
+    </div>
+  )
+}
 
 const App = () => {
 
@@ -23,23 +36,27 @@ const App = () => {
   const { aToken } = useContext(AdminContext)
 
   return dToken || aToken ? (
-    <div className='bg-[#F8F9FD]'>
+    <div className='bg-[#F8F9FD] min-h-screen'>
       <ToastContainer />
       <Navbar />
-      <div className='flex items-start'>
+      <div className='flex items-start w-full'>
         <Sidebar />
-        <Routes>
-          <Route path='/' element={<></>} />
-          <Route path='/admin-dashboard' element={<Dashboard />} />
-          <Route path='/all-appointments' element={<AllAppointments />} />
-          <Route path='/add-doctor' element={<AddDoctor />} />
-          <Route path='/doctor-list' element={<DoctorsList />} />
-          <Route path='/lab-catalog' element={<LabCatalog />} />
-          <Route path='/fees-catalog' element={<FeesCatalog />} />
-          <Route path='/doctor-dashboard' element={<DoctorDashboard />} />
-          <Route path='/doctor-appointments' element={<DoctorAppointments />} />
-          <Route path='/doctor-profile' element={<DoctorProfile />} />
-        </Routes>
+        <ContentWrapper>
+          <Routes>
+            <Route path='/' element={<></>} />
+            <Route path='/admin-dashboard' element={<Dashboard />} />
+            <Route path='/all-appointments' element={<AllAppointments />} />
+            <Route path='/add-doctor' element={<AddDoctor />} />
+            <Route path='/doctor-list' element={<DoctorsList />} />
+            <Route path='/lab-catalog' element={<LabCatalog />} />
+            <Route path='/fees-catalog' element={<FeesCatalog />} />
+            <Route path='/doctor-dashboard' element={<DoctorDashboard />} />
+            <Route path='/doctor-appointments' element={<DoctorAppointments />} />
+            <Route path='/doctor-profile' element={<DoctorProfile />} />
+            <Route path='/doctor-chat' element={<DoctorChat />} />
+            <Route path='/doctor-consultation' element={<DoctorConsultation />} />
+          </Routes>
+        </ContentWrapper>
       </div>
     </div>
   ) : (

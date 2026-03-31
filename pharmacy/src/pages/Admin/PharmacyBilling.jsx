@@ -4,18 +4,22 @@ import html2pdf from 'html2pdf.js'
 import { PharmacyContext } from '../../context/PharmacyContext'
 import { AppContext } from '../../context/AppContext'
 import { toast } from 'react-toastify'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 const PharmacyBilling = () => {
   const { pharmToken, medicines, getMedicines, lookupPatient, updateMedicine, backendUrl } = useContext(PharmacyContext)
   const { currency } = useContext(AppContext)
-  const [patientId, setPatientId] = useState('')
-  const [patientName, setPatientName] = useState('')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [searchQuery, setSearchQuery] = useState('')
   const [searching, setSearching] = useState(false)
   const [patientResults, setPatientResults] = useState([])
   const [selectedPatient, setSelectedPatient] = useState(null)
   const [medSearch, setMedSearch] = useState('')
+  const [medCategory, setMedCategory] = useState('All')
   const [cart, setCart] = useState([])
   const [paymentMethod, setPaymentMethod] = useState('Cash')
+  const [consultationId, setConsultationId] = useState('')
 
   const latestAppointment = selectedPatient?.appointments?.[0]
   const doctorName = latestAppointment?.docData?.name || selectedPatient?.patient?.assignedDoctorName || '-'
@@ -28,30 +32,98 @@ const PharmacyBilling = () => {
     if (pharmToken) getMedicines()
   }, [pharmToken])
 
+  useEffect(() => {
+    const consultation = location.state?.consultation
+    const invoice = location.state?.invoice
+    if (!consultation && !invoice) return
+
+    if (consultation) {
+      setConsultationId(consultation._id || '')
+    } else {
+      setConsultationId('')
+    }
+
+    const patient = {
+      _id: (consultation?.patientId || invoice?.userId) || '',
+      name: (consultation?.patientName || invoice?.patientName) || '',
+      email: (consultation?.patientEmail || invoice?.patientEmail) || '',
+      phone: (consultation?.patientPhone || invoice?.patientPhone) || '',
+      gender: consultation?.patientGender || '',
+      dob: consultation?.patientAge || ''
+    }
+    const appointment = {
+      docData: { name: (consultation?.doctorName || invoice?.doctorName) || '-' },
+      docId: (consultation?.doctorId || invoice?.doctorId) || ''
+    }
+    const prefillPatient = { patient, appointments: [appointment] }
+    setSelectedPatient(prefillPatient)
+    setPatientResults([prefillPatient])
+    setSearchQuery(patient._id || patient.name || '')
+
+    const sourceItems = consultation?.pharmacyItems || invoice?.items || []
+    const items = sourceItems.map((it, idx) => {
+      const name = it.name || it.medicineName
+      const match = medicines.find(m => (m.name || '').toLowerCase() === (name || '').toLowerCase())
+      if (match) {
+        return { ...match, qty: Number(it.qty || 1), price: Number(it.price ?? match.price ?? 0) }
+      }
+      return {
+        _id: `consult-${idx}`,
+        name: name || 'Medicine',
+        dosage: it.dosage || '-',
+        category: it.category || 'Prescription',
+        price: Number(it.price || 0),
+        qty: Number(it.qty || 1),
+        stock: 0,
+        isConsultationItem: true
+      }
+    })
+    setCart(items)
+  }, [location.state, medicines])
+
+  const medCategories = useMemo(() => {
+    const set = new Set()
+    medicines.forEach(m => {
+      const cat = (m.category || '').trim()
+      if (cat) set.add(cat)
+    })
+    return ['All', ...Array.from(set).sort((a, b) => a.localeCompare(b))]
+  }, [medicines])
+
   const filteredMeds = useMemo(() => {
     const q = medSearch.trim().toLowerCase()
-    if (!q) return medicines
-    return medicines.filter(m => (m.name || '').toLowerCase().includes(q))
-  }, [medicines, medSearch])
+    return medicines.filter(m => {
+      const nameMatch = (m.name || '').toLowerCase().includes(q)
+      const categoryMatch = medCategory === 'All' ? true : (m.category || '') === medCategory
+      return nameMatch && categoryMatch
+    })
+  }, [medicines, medSearch, medCategory])
 
   const total = cart.reduce((sum, item) => sum + item.price * item.qty, 0)
 
-  const onSearchPatient = async (e) => {
-    e.preventDefault()
-    if (!patientId && !patientName) {
-      toast.error('Enter patient ID or name')
+  const onSearchPatient = async (query) => {
+    if (!query.trim()) {
+      setPatientResults([])
       return
     }
     setSearching(true)
-    const data = await lookupPatient({ patientId: patientId.trim(), patientName: patientName.trim() })
+    const q = query.trim()
+    const isId = q.length >= 20
+    const data = await lookupPatient({ patientId: isId ? q : '', patientName: isId ? '' : q })
     setSearching(false)
     if (data.success) {
       setPatientResults(data.results || [])
     } else {
       setPatientResults([])
-      toast.error(data.message || 'No patient found')
     }
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearchPatient(searchQuery)
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   const addToCart = (med) => {
     setCart(prev => {
@@ -266,7 +338,7 @@ const PharmacyBilling = () => {
 
     // Save invoice and reduce stock after download
     try {
-      await fetch(backendUrl + '/api/pharmacy/create-invoice', {
+      const res = await fetch(backendUrl + '/api/pharmacy/create-invoice', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -280,7 +352,7 @@ const PharmacyBilling = () => {
           doctorId,
           doctorName,
           items: cart.map(item => ({
-            medicineId: item._id,
+            medicineId: item.isConsultationItem ? undefined : item._id,
             name: item.name,
             dosage: item.dosage,
             qty: item.qty,
@@ -291,11 +363,28 @@ const PharmacyBilling = () => {
           paymentMethod
         })
       })
+      const data = await res.json().catch(() => null)
+      if (!data?.success) {
+        toast.error(data?.message || 'Failed to save invoice')
+      } else {
+        if (consultationId) {
+          await fetch(backendUrl + '/api/pharmacy/consultations/pharmacy-invoiced', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              pharmtoken: pharmToken || ''
+            },
+            body: JSON.stringify({ consultationId })
+          })
+        }
+        navigate('/orders', { state: { patientId: selectedPatient?.patient?._id || '', patientName: selectedPatient?.patient?.name || '' } })
+      }
     } catch (e) {
       // ignore save failure
     }
 
     cart.forEach((item) => {
+      if (item.isConsultationItem || !item._id || String(item._id).startsWith('consult-')) return
       const newStock = Math.max(0, Number(item.stock || 0) - Number(item.qty || 0))
       updateMedicine({ medicineId: item._id, stock: newStock })
     })
@@ -305,32 +394,20 @@ const PharmacyBilling = () => {
     <div className='m-5 w-full'>
       <p className='text-xl font-semibold text-gray-700 mb-4'>Pharmacy Billing</p>
 
-      <form onSubmit={onSearchPatient} className='bg-white border rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-3 md:items-end'>
+      <div className='bg-white border rounded-xl p-4 mb-6 flex flex-col md:flex-row gap-3 md:items-end'>
         <div className='flex-1'>
-          <label className='text-sm font-medium text-gray-600'>Patient ID</label>
+          <label className='text-sm font-medium text-gray-600'>Patient Search</label>
           <input
-            value={patientId}
-            onChange={(e) => setPatientId(e.target.value)}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className='w-full mt-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-400'
-            placeholder='e.g. 65c2...'
+            placeholder='Enter patient ID or name'
           />
         </div>
-        <div className='flex-1'>
-          <label className='text-sm font-medium text-gray-600'>Patient Name</label>
-          <input
-            value={patientName}
-            onChange={(e) => setPatientName(e.target.value)}
-            className='w-full mt-1 border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-400'
-            placeholder='e.g. John Doe'
-          />
-        </div>
-        <button
-          type='submit'
-          className='bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg text-sm font-medium transition-colors'
-        >
-          {searching ? 'Searching...' : 'Search'}
-        </button>
-      </form>
+        {searching && (
+          <p className='text-xs text-gray-400'>Searching...</p>
+        )}
+      </div>
 
       {patientResults.length > 0 && (
         <div className='bg-white border rounded-xl p-4 mb-6'>
@@ -374,14 +451,25 @@ const PharmacyBilling = () => {
           </div>
 
           <div className='bg-white border rounded-xl p-4'>
-            <div className='flex items-center justify-between mb-3'>
+            <div className='flex flex-col gap-3 mb-3 md:flex-row md:items-center md:justify-between'>
               <p className='text-sm font-semibold text-gray-700'>Medicines</p>
-              <input
-                value={medSearch}
-                onChange={(e) => setMedSearch(e.target.value)}
-                className='border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-400'
-                placeholder='Search medicine...'
-              />
+              <div className='flex flex-col gap-2 md:flex-row md:items-center'>
+                <select
+                  value={medCategory}
+                  onChange={(e) => setMedCategory(e.target.value)}
+                  className='border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-400'
+                >
+                  {medCategories.map((cat) => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+                <input
+                  value={medSearch}
+                  onChange={(e) => setMedSearch(e.target.value)}
+                  className='border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-emerald-400'
+                  placeholder='Search medicine...'
+                />
+              </div>
             </div>
             <div className='max-h-[60vh] overflow-y-auto space-y-2'>
               {filteredMeds.map((m) => (

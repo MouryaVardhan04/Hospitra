@@ -11,9 +11,9 @@ import labCatalogModel from "../models/labCatalogModel.js";
 import feesCatalogModel from "../models/feesCatalogModel.js";
 import billingInvoiceModel from "../models/billingInvoiceModel.js";
 import auditLogModel from "../models/auditLogModel.js";
-import { sendAppointmentBookedEmail, sendAppointmentCancelledEmail } from "../services/emailService.js";
-import { sendBillingInvoiceEmail } from "../services/emailService.js";
-import { generateBillingInvoicePdf } from "../services/pdfService.js";
+import doctorConsultationModel from "../models/doctorConsultationModel.js";
+import pharmacyInvoiceModel from "../models/pharmacyInvoiceModel.js";
+import medicineModel from "../models/pharmacyModel.js";
 
 // API for admin login
 const loginAdmin = async (req, res) => {
@@ -80,31 +80,6 @@ const appointmentCancel = async (req, res) => {
 
         // Mark as cancelled
         await appointmentModel.findByIdAndUpdate(appointmentId, { cancelled: true })
-
-        // Try sending cancellation email to the user (non-blocking for response)
-        const userEmail = appointment?.userData?.email
-        const userName = appointment?.userData?.name
-        const doctorName = appointment?.docData?.name
-        const slotDate = appointment?.slotDate
-        const slotTime = appointment?.slotTime
-
-        if (userEmail) {
-            // Fire and forget; don't block success response on email failure
-            sendAppointmentCancelledEmail({
-                to: userEmail,
-                userName,
-                doctorName,
-                speciality: appointment?.docData?.speciality,
-                slotDate,
-                slotTime,
-                appointmentId,
-                amount: appointment?.amount,
-                payment: appointment?.payment,
-                clinicAddress: appointment?.docData?.address,
-            }).catch(err => {
-                console.warn('[email] appointment cancel email failed:', err?.message || err)
-            })
-        }
 
         res.json({ success: true, message: 'Appointment Cancelled' })
 
@@ -220,15 +195,55 @@ const updateDoctor = async (req, res) => {
 const adminDashboard = async (req, res) => {
     try {
 
-        const doctors = await doctorModel.find({})
-        const users = await userModel.find({})
-        const appointments = await appointmentModel.find({})
+        const [
+            doctors,
+            users,
+            appointments,
+            labAssignments,
+            billingInvoices,
+            pharmacyInvoices,
+            medicines
+        ] = await Promise.all([
+            doctorModel.find({}),
+            userModel.find({}),
+            appointmentModel.find({}),
+            labAssignmentModel.find({}),
+            billingInvoiceModel.find({}),
+            pharmacyInvoiceModel.find({}),
+            medicineModel.find({})
+        ])
+
+        // Revenue calculations
+        const pharmacyRevenue = pharmacyInvoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0)
+        const labsRevenue = labAssignments.reduce((sum, ass) => sum + Number(ass.total || 0), 0)
+        const billingRevenue = billingInvoices.reduce((sum, inv) => sum + Number(inv.total || 0), 0)
+        const appointmentRevenue = appointments.reduce((sum, app) => sum + Number(app.amount || 0), 0)
+        const totalRevenue = pharmacyRevenue + labsRevenue + billingRevenue + appointmentRevenue
+
+        // Summary metrics
+        const lowStockMedicines = medicines.filter(m => m.stock < 10).length
+        const pendingLabs = labAssignments.filter(a => a.status === 'Assigned' || a.status === 'Processing').length
 
         const dashData = {
             doctors: doctors.length,
             appointments: appointments.length,
             patients: users.length,
-            latestAppointments: appointments.reverse()
+            totalRevenue,
+            pharmacyRevenue,
+            labsRevenue,
+            billingRevenue,
+            appointmentRevenue,
+            medicineSummary: {
+                total: medicines.length,
+                lowStock: lowStockMedicines
+            },
+            labSummary: {
+                total: labAssignments.length,
+                pending: pendingLabs
+            },
+            latestAppointments: appointments.reverse().slice(0, 10),
+            latestPharmacyInvoices: pharmacyInvoices.reverse().slice(0, 5),
+            latestLabAssignments: labAssignments.reverse().slice(0, 5)
         }
 
         res.json({ success: true, dashData })
@@ -344,6 +359,43 @@ const updateLabCatalog = async (req, res) => {
             await doc.save()
         }
         res.json({ success: true, message: 'Lab catalog updated' })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to get doctor consultations (reception)
+const getDoctorConsultations = async (req, res) => {
+    try {
+        const consultations = await doctorConsultationModel.find({}).sort({ createdAt: -1 })
+        res.json({ success: true, consultations })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to mark consultation lab assignment as completed
+const markConsultationLabAssigned = async (req, res) => {
+    try {
+        const { consultationId } = req.body
+        if (!consultationId) return res.json({ success: false, message: 'consultationId is required' })
+        await doctorConsultationModel.findByIdAndUpdate(consultationId, { labAssigned: true })
+        res.json({ success: true, message: 'Lab assignment marked' })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to mark consultation surgery invoice as completed
+const markConsultationSurgeryInvoiced = async (req, res) => {
+    try {
+        const { consultationId } = req.body
+        if (!consultationId) return res.json({ success: false, message: 'consultationId is required' })
+        await doctorConsultationModel.findByIdAndUpdate(consultationId, { surgeryInvoiced: true })
+        res.json({ success: true, message: 'Surgery invoice marked' })
     } catch (error) {
         console.log(error)
         res.json({ success: false, message: error.message })
@@ -672,21 +724,6 @@ const bookAppointmentReception = async (req, res) => {
         await newAppointment.save()
         await doctorModel.findByIdAndUpdate(docId, { slots_booked })
 
-        try {
-            const prettyDate = slotDate.replaceAll('_', '/')
-            await sendAppointmentBookedEmail({
-                to: userData.email,
-                userName: userData.name,
-                doctorName: docData.name,
-                speciality: docData.speciality,
-                slotDate: prettyDate,
-                slotTime,
-                fee: docData.fees
-            })
-        } catch (e) {
-            console.warn('Email send failed (reception booked):', e?.message || e)
-        }
-
         res.json({ success: true, message: 'Appointment Booked' })
     } catch (error) {
         console.log(error)
@@ -748,22 +785,18 @@ const createBillingInvoice = async (req, res) => {
 
         await invoice.save()
 
-        if (invoice.patientEmail && !invoice.emailSentAt) {
-            try {
-                const pdfBuffer = await generateBillingInvoicePdf({ invoice })
-                await sendBillingInvoiceEmail({
-                    to: invoice.patientEmail,
-                    userName: invoice.patientName,
-                    pdfBuffer,
-                    invoiceId: invoice._id?.toString()
-                })
-                await billingInvoiceModel.findByIdAndUpdate(invoice._id, { emailSentAt: Date.now() })
-            } catch (e) {
-                console.warn('Email send failed (billing invoice):', e?.message || e)
-            }
-        }
-
         res.json({ success: true, message: 'Billing invoice saved', invoice })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to get billing invoices (admin/reception)
+const getBillingInvoices = async (req, res) => {
+    try {
+        const invoices = await billingInvoiceModel.find({}).sort({ createdAt: -1 }).limit(200)
+        res.json({ success: true, invoices })
     } catch (error) {
         console.log(error)
         res.json({ success: false, message: error.message })
@@ -816,5 +849,9 @@ export {
     updateLabCatalog,
     getFeesCatalog,
     updateFeesCatalog,
+    getBillingInvoices,
+    getDoctorConsultations,
+    markConsultationLabAssigned,
+    markConsultationSurgeryInvoiced,
     getAuditLogs
 }

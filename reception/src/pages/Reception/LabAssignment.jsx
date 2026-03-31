@@ -5,13 +5,17 @@ import axios from 'axios'
 import html2pdf from 'html2pdf.js'
 import { AppContext } from '../../context/AppContext'
 import { AdminContext } from '../../context/AdminContext'
+import { useLocation } from 'react-router-dom'
 
 const LabAssignment = () => {
-  const { backendUrl, currency } = useContext(AppContext)
+  const { backendUrl } = useContext(AppContext)
   const { aToken, lookupPatient, getLabCatalog } = useContext(AdminContext)
+  const location = useLocation()
+  const [consultationId, setConsultationId] = useState('')
   const [patientId, setPatientId] = useState('')
   const [patientName, setPatientName] = useState('')
   const [patientPhone, setPatientPhone] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [catalog, setCatalog] = useState([])
@@ -75,22 +79,58 @@ const LabAssignment = () => {
     }
   }, [catalog, selectedCategoryIndex])
 
-  const onSearch = async (e) => {
-    e.preventDefault()
-    if (!patientId && !patientName) {
-      toast.error('Enter patient ID or name')
+  useEffect(() => {
+    const consultation = location.state?.consultation
+    if (!consultation) return
+
+    setConsultationId(consultation._id || '')
+
+    setPatientId(consultation.patientId || '')
+    setPatientName(consultation.patientName || '')
+    setPatientPhone(consultation.patientPhone || '')
+    setSearchQuery(consultation.patientId || consultation.patientName || '')
+    setDoctorId(consultation.doctorId || '')
+    setDoctorName(consultation.doctorName || '')
+    setAppointmentDate(consultation.appointmentDate || '')
+    setAppointmentTimeSlot(consultation.appointmentTime || '')
+    setNotes(consultation.notes || '')
+
+    const items = (consultation.labItems || []).map((it) => ({
+      key: `${it.category || 'Lab'}::${it.name}`,
+      name: it.name,
+      price: Number(it.price || 0),
+      category: it.category || 'Lab'
+    }))
+    setSelectedItems(items)
+
+    if (items.length > 0) {
+      setSelectedCategoryKey(items[0].category)
+    }
+  }, [location.state])
+
+  const onSearch = async (query) => {
+    if (!query.trim()) {
+      setResults([])
       return
     }
     setSearching(true)
-    const data = await lookupPatient({ patientId: patientId.trim(), patientName: patientName.trim() })
+    const q = query.trim()
+    const isId = q.length >= 20
+    const data = await lookupPatient({ patientId: isId ? q : '', patientName: isId ? '' : q })
     setSearching(false)
     if (data.success) {
       setResults(data.results || [])
     } else {
       setResults([])
-      toast.error(data.message || 'No patient found')
     }
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(searchQuery)
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   const selectPatient = (result) => {
     const patient = result?.patient || result || {}
@@ -147,6 +187,9 @@ const LabAssignment = () => {
       }
       const { data } = await axios.post(backendUrl + '/api/admin/lab-assignment', payload, { headers: { aToken } })
       if (data.success) {
+        if (consultationId) {
+          await axios.post(backendUrl + '/api/admin/consultations/lab-assigned', { consultationId }, { headers: { aToken } })
+        }
         const assignments = JSON.parse(localStorage.getItem('receptionLabAssignments') || '[]')
         const assignmentRecord = {
           patientId,
@@ -182,7 +225,6 @@ const LabAssignment = () => {
     const createdAt = assignment?.createdAt ? new Date(assignment.createdAt) : new Date()
     const invoiceId = assignment?.createdAt ? `LAB-${assignment.createdAt}` : 'PENDING'
     const items = assignment?.items || []
-    const totalAmount = assignment?.total ?? 0
     const patientLabel = assignment?.patientName || patientName || '-'
     const patientRef = assignment?.patientId || patientId || '-'
     const patientPhoneLabel = assignment?.patientPhone || patientPhone || '-'
@@ -197,13 +239,11 @@ const LabAssignment = () => {
               <td class="num">${idx + 1}</td>
               <td class="tname"><strong>${it.name || '-'}</strong></td>
               <td class="cat">${it.category || '-'}</td>
-              <td class="amt">${currency}${Number(it.price || 0).toLocaleString()}</td>
             </tr>`).join('')
       : `<tr>
               <td class="num">1</td>
               <td class="tname"><strong>Lab Tests</strong></td>
               <td class="cat">Not specified</td>
-              <td class="amt">${currency}0</td>
             </tr>`
 
     const priorityColor = priorityVal.toLowerCase() === 'stat' ? '#dc2626'
@@ -259,13 +299,6 @@ const LabAssignment = () => {
       td.tname strong { font-size: 12px; }
       td.cat { color: #64748b; font-size: 11px; }
       td.amt { font-weight: 700; color: #0f172a; text-align: right; }
-
-      /* Bottom section — sits naturally at page bottom via flexbox */
-      .bottom { margin-top: auto; padding-top: 10px; }
-      .totals-wrap { display: flex; justify-content: flex-end; margin-bottom: 8px; }
-      .totals-box { width: 180px; }
-      .trow { display: flex; justify-content: space-between; font-size: 11px; color: #475569; padding: 3px 0; border-bottom: 1px solid #f1f5f9; }
-      .trow.grand { padding-top: 6px; border-top: 2px solid #1e3a5f; border-bottom: none; font-size: 13px; font-weight: 700; color: #0f172a; }
       .footer { border-top: 1px solid #e2e8f0; padding-top: 6px; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
       .footer-left { font-size: 10px; color: #64748b; }
       .footer-left strong { color: #1e3a5f; }
@@ -313,7 +346,6 @@ const LabAssignment = () => {
             <th style="width:26px">#</th>
             <th style="width:45%">Test Name</th>
             <th style="width:30%">Category</th>
-            <th class="r" style="width:20%">Amount</th>
           </tr>
         </thead>
         <tbody>
@@ -324,12 +356,6 @@ const LabAssignment = () => {
       </div>
 
       <div class="bottom">
-        <div class="totals-wrap">
-          <div class="totals-box">
-            <div class="trow"><span>Subtotal</span><span>${currency}${Number(totalAmount || 0).toLocaleString()}</span></div>
-            <div class="trow grand"><span>Total Due</span><span>${currency}${Number(totalAmount || 0).toLocaleString()}</span></div>
-          </div>
-        </div>
         <div class="footer">
           <div class="footer-left"><strong>Hospitra Digital Health Systems</strong> &nbsp;&middot;&nbsp; Thank you for choosing Hospitra.</div>
           <div class="footer-right">Computer Generated Invoice<br/>No Physical Signature Required</div>
@@ -380,39 +406,41 @@ const LabAssignment = () => {
         <p className='text-xl font-semibold text-gray-700'>Lab Assignment</p>
       </div>
       <div className='bg-white border rounded-xl p-6 mb-6'>
-        <form onSubmit={onSearch} className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600'>
           <div>
-            <p className='font-medium'>Patient ID</p>
-            <input className='border rounded-lg w-full p-2 mt-1' value={patientId} onChange={e => setPatientId(e.target.value)} />
+            <p className='font-medium'>Patient Search</p>
+            <input
+              className='border rounded-lg w-full p-2 mt-1'
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder='Enter patient ID or name'
+            />
           </div>
-          <div>
-            <p className='font-medium'>Patient Name</p>
-            <input className='border rounded-lg w-full p-2 mt-1' value={patientName} onChange={e => setPatientName(e.target.value)} />
-          </div>
-          <div className='md:col-span-2 flex gap-2'>
-            <button className='bg-violet-600 text-white px-6 py-2 rounded-lg text-sm'>
-              {searching ? 'Searching...' : 'Search Patient'}
-            </button>
-          </div>
-        </form>
+          {searching && (
+            <p className='text-xs text-gray-400 mt-1'>Searching...</p>
+          )}
+        </div>
         {results.length > 0 && (
           <div className='mt-4 space-y-3'>
-            {results.map((item, idx) => (
-              <div key={idx} className='border rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 text-sm'>
-                <div>
-                  <p className='font-medium text-gray-800'>{item.patient.name}</p>
-                  <p className='text-xs text-gray-500'>{item.patient.email}</p>
-                  <p className='text-xs text-gray-500'>Phone: {item.patient.phone}</p>
+            {results.map((item, idx) => {
+              const patient = item?.patient || item || {}
+              return (
+                <div key={idx} className='border rounded-lg p-3 flex flex-wrap items-center justify-between gap-3 text-sm'>
+                  <div>
+                    <p className='font-medium text-gray-800'>{patient.name || 'Patient'}</p>
+                    <p className='text-xs text-gray-500'>{patient.email || '-'}</p>
+                    <p className='text-xs text-gray-500'>Phone: {patient.phone || '-'}</p>
+                  </div>
+                  <button
+                    type='button'
+                    onClick={() => selectPatient(item)}
+                    className='px-4 py-2 rounded-lg text-sm bg-primary text-white'
+                  >
+                    Select
+                  </button>
                 </div>
-                <button
-                  type='button'
-                  onClick={() => selectPatient(item)}
-                  className='px-4 py-2 rounded-lg text-sm bg-primary text-white'
-                >
-                  Select
-                </button>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -507,7 +535,7 @@ const LabAssignment = () => {
                               onChange={() => toggleItem(selectedCategory.name, item)}
                             />
                             <span className='flex-1'>{item.name}</span>
-                            <span className='text-xs text-gray-500'>₹{item.price}</span>
+                            <span className='text-xs text-gray-500'>{item.category}</span>
                           </label>
                         )
                       })
@@ -521,8 +549,7 @@ const LabAssignment = () => {
           )}
         </div>
 
-        <div className='mt-5 flex items-center justify-between'>
-          <p className='text-sm text-gray-600'>Total: <span className='font-semibold text-gray-800'>₹{total}</span></p>
+        <div className='mt-5 flex items-center justify-end'>
           <div className='flex items-center gap-2'>
             <button
               type='button'

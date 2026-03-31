@@ -92,6 +92,28 @@ const DoctorContextProvider = (props) => {
 
     }
 
+    // Function to accept appointment using API
+    const acceptAppointment = async (appointmentId) => {
+
+        try {
+
+            const { data } = await axios.post(backendUrl + '/api/doctor/accept-appointment', { appointmentId }, { headers: { dToken } })
+
+            if (data.success) {
+                toast.success(data.message)
+                getAppointments()
+                getDashData()
+            } else {
+                toast.error(data.message)
+            }
+
+        } catch (error) {
+            toast.error(error.message)
+            console.log(error)
+        }
+
+    }
+
     // Getting Doctor dashboard data using API
     const getDashData = async () => {
         try {
@@ -116,6 +138,7 @@ const DoctorContextProvider = (props) => {
         appointments,
         getAppointments,
         cancelAppointment,
+        acceptAppointment,
         completeAppointment,
         dashData, getDashData,
         profileData, setProfileData,

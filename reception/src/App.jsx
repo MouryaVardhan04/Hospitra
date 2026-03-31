@@ -12,6 +12,7 @@ import AppointmentBooking from './pages/Reception/AppointmentBooking'
 import LabAssignment from './pages/Reception/LabAssignment'
 import BillingInitiation from './pages/Reception/BillingInitiation'
 import QueueManagement from './pages/Reception/QueueManagement'
+import ConsultationOrders from './pages/Reception/ConsultationOrders'
 
 const App = () => {
 
@@ -30,6 +31,7 @@ const App = () => {
           <Route path='/appointment-booking' element={<AppointmentBooking />} />
           <Route path='/lab-assignment' element={<LabAssignment />} />
           <Route path='/billing-initiation' element={<BillingInitiation />} />
+          <Route path='/consultation-orders' element={<ConsultationOrders />} />
           <Route path='/queue-management' element={<QueueManagement />} />
         </Routes>
       </div>

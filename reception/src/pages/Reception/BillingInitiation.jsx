@@ -4,14 +4,19 @@ import { toast } from 'react-toastify'
 import html2pdf from 'html2pdf.js'
 import { AppContext } from '../../context/AppContext'
 import { AdminContext } from '../../context/AdminContext'
+import axios from 'axios'
+import { useLocation } from 'react-router-dom'
 
 const BillingInitiation = () => {
-  const { currency } = useContext(AppContext)
-  const { lookupPatient, getFeesCatalog, createBillingInvoice } = useContext(AdminContext)
+  const { currency, backendUrl } = useContext(AppContext)
+  const { lookupPatient, getFeesCatalog, createBillingInvoice, aToken } = useContext(AdminContext)
+  const location = useLocation()
+  const [consultationId, setConsultationId] = useState('')
   const [patientId, setPatientId] = useState('')
   const [patientName, setPatientName] = useState('')
   const [patientEmail, setPatientEmail] = useState('')
   const [patientPhone, setPatientPhone] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [results, setResults] = useState([])
   const [searching, setSearching] = useState(false)
   const [department, setDepartment] = useState('OPD')
@@ -58,6 +63,32 @@ const BillingInitiation = () => {
     }
   }, [feesCatalog, selectedCategoryIndex])
 
+  useEffect(() => {
+    const consultation = location.state?.consultation
+    if (!consultation) return
+
+    setConsultationId(consultation._id || '')
+
+    setPatientId(consultation.patientId || '')
+    setPatientName(consultation.patientName || '')
+    setPatientEmail(consultation.patientEmail || '')
+    setPatientPhone(consultation.patientPhone || '')
+    setSearchQuery(consultation.patientId || consultation.patientName || '')
+    setDepartment('Surgery')
+    setNotes(consultation.notes || '')
+
+    const items = (consultation.surgeryItems || []).map((it) => ({
+      key: `${it.category || 'Surgery'}::${it.name}`,
+      name: it.name,
+      price: Number(it.price || 0),
+      category: it.category || 'Surgery'
+    }))
+    setSelectedItems(items)
+    if (items.length > 0) {
+      setSelectedCategoryKey(items[0].category)
+    }
+  }, [location.state])
+
   const toggleItem = (categoryName, item) => {
     const key = `${categoryName}::${item.name}`
     const exists = selectedItems.find(i => i.key === key)
@@ -71,22 +102,29 @@ const BillingInitiation = () => {
     }
   }
 
-  const onSearch = async (e) => {
-    e.preventDefault()
-    if (!patientId && !patientName) {
-      toast.error('Enter patient ID or name')
+  const onSearch = async (query) => {
+    if (!query.trim()) {
+      setResults([])
       return
     }
     setSearching(true)
-    const data = await lookupPatient({ patientId: patientId.trim(), patientName: patientName.trim() })
+    const q = query.trim()
+    const isId = q.length >= 20
+    const data = await lookupPatient({ patientId: isId ? q : '', patientName: isId ? '' : q })
     setSearching(false)
     if (data.success) {
       setResults(data.results || [])
     } else {
       setResults([])
-      toast.error(data.message || 'No patient found')
     }
   }
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      onSearch(searchQuery)
+    }, 400)
+    return () => clearTimeout(timer)
+  }, [searchQuery])
 
   const selectPatient = (patient) => {
     setPatientId(patient._id || '')
@@ -113,8 +151,24 @@ const BillingInitiation = () => {
     if (data?.success) {
       toast.success('Billing initiated and invoice emailed')
       setLastBilling(data.invoice)
+      try {
+        const billings = JSON.parse(localStorage.getItem('receptionBillings') || '[]')
+        billings.unshift({
+          patientId,
+          patientName,
+          department,
+          total: totalAmount,
+          createdAt: Date.now()
+        })
+        localStorage.setItem('receptionBillings', JSON.stringify(billings))
+      } catch {
+        // ignore storage errors
+      }
       setSelectedItems([])
       setNotes('')
+      if (consultationId && department === 'Surgery') {
+        await axios.post(backendUrl + '/api/admin/consultations/surgery-invoiced', { consultationId }, { headers: { aToken } })
+      }
     } else {
       toast.error(data?.message || 'Failed to create billing invoice')
     }
@@ -307,21 +361,20 @@ const BillingInitiation = () => {
       </div>
 
       <div className='bg-white border rounded-xl p-6 mb-6'>
-        <form onSubmit={onSearch} className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600'>
+        <div className='grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600'>
           <div>
-            <p className='font-medium'>Patient ID</p>
-            <input className='border rounded-lg w-full p-2 mt-1' value={patientId} onChange={e => setPatientId(e.target.value)} />
+            <p className='font-medium'>Patient Search</p>
+            <input
+              className='border rounded-lg w-full p-2 mt-1'
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder='Enter patient ID or name'
+            />
           </div>
-          <div>
-            <p className='font-medium'>Patient Name</p>
-            <input className='border rounded-lg w-full p-2 mt-1' value={patientName} onChange={e => setPatientName(e.target.value)} />
-          </div>
-          <div className='md:col-span-2 flex gap-2'>
-            <button className='bg-violet-600 text-white px-6 py-2 rounded-lg text-sm'>
-              {searching ? 'Searching...' : 'Search Patient'}
-            </button>
-          </div>
-        </form>
+          {searching && (
+            <p className='text-xs text-gray-400 mt-1'>Searching...</p>
+          )}
+        </div>
         {results.length > 0 && (
           <div className='mt-4 space-y-3'>
             {results.map((item, idx) => (

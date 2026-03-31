@@ -1,4 +1,4 @@
-import React, { useContext, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { assets } from '../assets/assets'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { AppContext } from '../context/AppContext'
@@ -9,6 +9,26 @@ const Navbar = () => {
 
   const [showMenu, setShowMenu] = useState(false)
   const { token, setToken, userData } = useContext(AppContext)
+  const [chatUnread, setChatUnread] = useState(0)
+
+  useEffect(() => {
+    const readUnread = () => {
+      const value = Number(localStorage.getItem('userChatUnreadPersons') || 0)
+      setChatUnread(Number.isFinite(value) ? value : 0)
+    }
+
+    readUnread()
+    const interval = setInterval(readUnread, 3000)
+    const onStorage = (event) => {
+      if (event.key === 'userChatUnreadPersons') readUnread()
+    }
+    window.addEventListener('storage', onStorage)
+
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('storage', onStorage)
+    }
+  }, [])
 
   const logout = () => {
     localStorage.removeItem('token')
@@ -35,6 +55,12 @@ const Navbar = () => {
           </NavLink>
           <NavLink to='/contact' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-slate-600'}`}>
             CONTACT
+          </NavLink>
+          <NavLink to='/chat' className={({ isActive }) => `py-1 transition-colors ${isActive ? 'text-primary' : 'text-slate-600'} flex items-center gap-2`}>
+            CHAT
+            {chatUnread > 0 && (
+              <span className='text-xs bg-primary text-white rounded-full px-2 py-0.5'>{chatUnread}</span>
+            )}
           </NavLink>
         </ul>
 
@@ -82,6 +108,12 @@ const Navbar = () => {
           <NavLink onClick={() => setShowMenu(false)} to='/doctors' className='px-4 py-2 rounded-full hover:bg-gray-100'>ALL DOCTORS</NavLink>
           <NavLink onClick={() => setShowMenu(false)} to='/about' className='px-4 py-2 rounded-full hover:bg-gray-100'>ABOUT</NavLink>
           <NavLink onClick={() => setShowMenu(false)} to='/contact' className='px-4 py-2 rounded-full hover:bg-gray-100'>CONTACT</NavLink>
+          <NavLink onClick={() => setShowMenu(false)} to='/chat' className='px-4 py-2 rounded-full hover:bg-gray-100 flex items-center justify-between'>
+            <span>CHAT</span>
+            {chatUnread > 0 && (
+              <span className='text-xs bg-primary text-white rounded-full px-2 py-0.5'>{chatUnread}</span>
+            )}
+          </NavLink>
         </ul>
 
         <div className='px-5 mt-6'>

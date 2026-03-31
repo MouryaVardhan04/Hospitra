@@ -4,8 +4,6 @@ import labTestModel from "../models/labsModel.js";
 import labAssignmentModel from "../models/labAssignmentModel.js";
 import userModel from "../models/userModel.js";
 import appointmentModel from "../models/appointmentModel.js";
-import { sendLabReportEmail } from "../services/emailService.js";
-import { generateLabReportPdf, generateLabInvoicePdf } from "../services/pdfService.js";
 
 // API for labs admin login
 const loginLabs = async (req, res) => {
@@ -169,38 +167,6 @@ const updateLabAssignment = async (req, res) => {
         }
 
         const updatedAssignment = await labAssignmentModel.findByIdAndUpdate(assignmentId, updateData, { new: true })
-
-        if (updatedAssignment && (updateData.reportText || updateData.status === 'Reported')) {
-            const hasEmail = updatedAssignment.patientEmail && !updatedAssignment.reportEmailSentAt
-            if (hasEmail) {
-                try {
-                    let appointment = null
-                    if (updatedAssignment.appointmentId && mongoose.Types.ObjectId.isValid(updatedAssignment.appointmentId)) {
-                        appointment = await appointmentModel.findById(updatedAssignment.appointmentId)
-                    } else if (updatedAssignment.patientId) {
-                        appointment = await appointmentModel.findOne({ userId: updatedAssignment.patientId }).sort({ date: -1 })
-                    }
-
-                    // Generate report and invoice as separate PDFs
-                    const [reportPdfBuffer, invoicePdfBuffer] = await Promise.all([
-                        generateLabReportPdf({ assignment: updatedAssignment, appointment }),
-                        generateLabInvoicePdf({ assignment: updatedAssignment, appointment }),
-                    ])
-
-                    await sendLabReportEmail({
-                        to: updatedAssignment.patientEmail,
-                        userName: updatedAssignment.patientName,
-                        reportPdfBuffer,
-                        invoicePdfBuffer,
-                        assignmentId: updatedAssignment._id?.toString()
-                    })
-
-                    await labAssignmentModel.findByIdAndUpdate(updatedAssignment._id, { reportEmailSentAt: Date.now() })
-                } catch (e) {
-                    console.warn('Email send failed (lab report):', e?.message || e)
-                }
-            }
-        }
 
         res.json({ success: true, message: 'Assignment updated' })
     } catch (error) {

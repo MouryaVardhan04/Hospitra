@@ -8,6 +8,7 @@ const MyProfile = () => {
 
     const [isEdit, setIsEdit] = useState(false)
     const [image, setImage] = useState(false)
+    const [prescriptions, setPrescriptions] = useState([])
     const { token, backendUrl, userData, setUserData, loadUserProfileData } = useContext(AppContext)
 
     const handleCancel = async () => {
@@ -15,6 +16,19 @@ const MyProfile = () => {
         setImage(false)
         await loadUserProfileData()
     }
+
+    useEffect(() => {
+        const loadPrescriptions = async () => {
+            if (!token) return
+            try {
+                const { data } = await axios.get(backendUrl + '/api/user/pharmacy-invoices', { headers: { token } })
+                if (data?.success) setPrescriptions(data.invoices || [])
+            } catch (error) {
+                // ignore load errors
+            }
+        }
+        loadPrescriptions()
+    }, [token])
 
     // Function to update user profile data using API
     const updateUserProfileData = async () => {
@@ -178,6 +192,32 @@ const MyProfile = () => {
                                 )}
                             </div>
                         </div>
+                    </div>
+
+                    <div className='bg-white rounded-xl shadow-sm p-6 mt-6'>
+                        <p className='text-gray-700 font-medium mb-4'>Prescriptions</p>
+                        {prescriptions.length === 0 ? (
+                            <p className='text-sm text-gray-500'>No prescriptions available.</p>
+                        ) : (
+                            <div className='space-y-3 max-h-72 overflow-y-auto'>
+                                {prescriptions.map((inv) => (
+                                    <div key={inv._id} className='border border-slate-100 rounded-xl p-4'>
+                                        <div className='flex items-center justify-between text-sm text-slate-500'>
+                                            <span>{inv.createdAt ? new Date(inv.createdAt).toLocaleString() : ''}</span>
+                                            <span className='font-semibold text-slate-800'>₹{Number(inv.total || 0).toLocaleString()}</span>
+                                        </div>
+                                        <ul className='mt-2 space-y-1 text-sm text-slate-600'>
+                                            {(inv.items || []).map((item, idx) => (
+                                                <li key={idx} className='flex items-center justify-between'>
+                                                    <span>{item.name} × {item.qty || 1}</span>
+                                                    <span>₹{(item.price || 0) * (item.qty || 1)}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
 
                     <div className='flex items-center justify-end gap-3 mt-6'>

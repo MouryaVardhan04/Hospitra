@@ -5,8 +5,7 @@ import { v2 as cloudinary } from "cloudinary";
 import userModel from "../models/userModel.js";
 import appointmentModel from "../models/appointmentModel.js";
 import pharmacyInvoiceModel from "../models/pharmacyInvoiceModel.js";
-import { sendPharmacyInvoiceEmail } from "../services/emailService.js";
-import { generatePharmacyInvoicePdf } from "../services/pdfService.js";
+import doctorConsultationModel from "../models/doctorConsultationModel.js";
 
 // API for pharmacy admin login
 const loginPharmacy = async (req, res) => {
@@ -202,23 +201,51 @@ const createInvoice = async (req, res) => {
 
         await invoice.save()
 
-        if (invoice.patientEmail && !invoice.emailSentAt) {
-            try {
-                const appointment = await appointmentModel.findOne({ userId: userId }).sort({ date: -1 })
-                const pdfBuffer = await generatePharmacyInvoicePdf({ invoice, appointment })
-                await sendPharmacyInvoiceEmail({
-                    to: invoice.patientEmail,
-                    userName: invoice.patientName,
-                    pdfBuffer,
-                    invoiceId: invoice._id?.toString()
-                })
-                await pharmacyInvoiceModel.findByIdAndUpdate(invoice._id, { emailSentAt: Date.now() })
-            } catch (e) {
-                console.warn('Email send failed (pharmacy invoice):', e?.message || e)
-            }
-        }
-
         res.json({ success: true, message: 'Invoice saved', invoice })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to get pharmacy invoices
+const getPharmacyInvoices = async (req, res) => {
+    try {
+        const { patientId, patientName } = req.query
+        const query = {}
+        if (patientId) query.userId = patientId
+        if (patientName) query.patientName = new RegExp(patientName, 'i')
+
+        const invoices = await pharmacyInvoiceModel.find(query).sort({ createdAt: -1 }).limit(100)
+        res.json({ success: true, invoices })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to get doctor consultations for pharmacy orders
+const getDoctorConsultations = async (req, res) => {
+    try {
+        const consultations = await doctorConsultationModel.find({
+            pharmacyItems: { $exists: true, $not: { $size: 0 } },
+            pharmacyInvoiced: { $ne: true }
+        }).sort({ createdAt: -1 })
+        res.json({ success: true, consultations })
+    } catch (error) {
+        console.log(error)
+        res.json({ success: false, message: error.message })
+    }
+}
+
+// API to mark pharmacy invoice completed for consultation
+const markConsultationPharmacyInvoiced = async (req, res) => {
+    try {
+        const { consultationId } = req.body
+        if (!consultationId) return res.json({ success: false, message: 'Consultation ID required' })
+
+        await doctorConsultationModel.findByIdAndUpdate(consultationId, { pharmacyInvoiced: true })
+        res.json({ success: true, message: 'Consultation marked as pharmacy invoiced' })
     } catch (error) {
         console.log(error)
         res.json({ success: false, message: error.message })
@@ -233,5 +260,8 @@ export {
     deleteMedicine,
     pharmacyDashboard,
     lookupPatient,
-    createInvoice
+    createInvoice,
+    getDoctorConsultations,
+    markConsultationPharmacyInvoiced,
+    getPharmacyInvoices
 }

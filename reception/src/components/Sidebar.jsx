@@ -63,6 +63,16 @@ const Sidebar = () => {
         </NavLink>
 
         <NavLink
+          to={'/consultation-orders'}
+          className={({ isActive }) => `group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition ${isActive ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-600'}`}
+        >
+          <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-white border'>
+            <img className='w-5' src={assets.list_icon} alt='' />
+          </span>
+          <p className='hidden md:block'>Consultation Orders</p>
+        </NavLink>
+
+        <NavLink
           to={'/queue-management'}
           className={({ isActive }) => `group flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition ${isActive ? 'bg-primary/10 text-primary' : 'hover:bg-gray-50 text-gray-600'}`}
         >

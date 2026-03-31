@@ -147,6 +147,18 @@ const MyAppointments = () => {
                             {!item.cancelled && !item.payment && !item.isCompleted && payment === item._id && <button onClick={() => appointmentRazorpay(item._id)} className='text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-gray-100 hover:text-white transition-all duration-300 flex items-center justify-center'><img className='max-w-20 max-h-5' src={assets.razorpay_logo} alt="" /></button>}
                             {!item.cancelled && item.payment && !item.isCompleted && <button className='sm:min-w-48 py-2 border rounded text-[#696969]  bg-[#EAEFFF]'>Paid</button>}
 
+                            {!item.cancelled && !item.isCompleted && item.isAccepted && (
+                                <button
+                                    onClick={() => navigate(`/chat?appointmentId=${item._id}`)}
+                                    className='text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-primary hover:text-white transition-all duration-300'
+                                >
+                                    Use Chat
+                                </button>
+                            )}
+                            {!item.cancelled && !item.isCompleted && !item.isAccepted && (
+                                <button className='sm:min-w-48 py-2 border rounded text-[#696969] bg-[#F8F9FD]'>Waiting for doctor acceptance</button>
+                            )}
+
                             {item.isCompleted && <button className='sm:min-w-48 py-2 border border-green-500 rounded text-green-500'>Completed</button>}
 
                             {!item.cancelled && !item.isCompleted && <button onClick={() => cancelAppointment(item._id)} className='text-[#696969] sm:min-w-48 py-2 border rounded hover:bg-red-600 hover:text-white transition-all duration-300'>Cancel appointment</button>}

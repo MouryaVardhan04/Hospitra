@@ -1,4 +1,6 @@
 import express from "express"
+import http from 'http'
+import { Server } from 'socket.io'
 import cors from 'cors'
 import 'dotenv/config'
 import connectDB from "./config/mongodb.js"
@@ -13,10 +15,17 @@ import chatRouter from './routes/chatRoute.js'
 import debugRouter from './routes/debugRoute.js'
 import { seedPharmacyMedicines } from "./seed/pharmacySeed.js"
 import auditLogger from './middleware/auditLogger.js'
+import registerChatSocket from './socket/chatSocket.js'
 
 // app config
 const app = express()
 const port = process.env.PORT || 4000
+const server = http.createServer(app)
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] }
+})
+
+registerChatSocket(io)
 
 // Initialize services, then start server only when DB is connected
 connectDB()
@@ -29,7 +38,7 @@ connectDB()
       app.use('/api/debug', debugRouter)
       console.log('[debug] email routes enabled')
     }
-    app.listen(port, '0.0.0.0', () => console.log(`Server started on PORT:${port}`))
+    server.listen(port, '0.0.0.0', () => console.log(`Server started on PORT:${port}`))
   })
   .catch((err) => {
     console.error('Failed to connect to MongoDB:', err?.message || err)

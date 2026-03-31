@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useState } from 'react'
 import { AppContext } from '../context/AppContext'
 import axios from 'axios'
 import { toast } from 'react-toastify'
@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom'
 const Login = () => {
 
   const [state, setState] = useState('Sign Up')
-  const [step, setStep] = useState('form')
   const [didAuth, setDidAuth] = useState(false)
 
   const [name, setName] = useState('')
@@ -20,11 +19,8 @@ const Login = () => {
   const [weight, setWeight] = useState('')
   const [addressLine1, setAddressLine1] = useState('')
   const [addressLine2, setAddressLine2] = useState('')
-  const [otp, setOtp] = useState('')
-  const [otpInput, setOtpInput] = useState(['', '', '', ''])
   const [profileImage, setProfileImage] = useState(null)
   const [profilePreview, setProfilePreview] = useState('')
-  const otpRefs = useRef([])
 
   const navigate = useNavigate()
   const { backendUrl, token, setToken } = useContext(AppContext)
@@ -33,31 +29,8 @@ const Login = () => {
     event.preventDefault();
 
     if (state === 'Sign Up') {
-      if (step === 'form') {
-        if (!name || !email || !password || !phone || !dob || !gender || !height || !weight || !addressLine1 || !addressLine2) {
-          toast.error('Please fill all profile details')
-          return
-        }
-
-        const generated = String(Math.floor(1000 + Math.random() * 9000))
-        if (!email) {
-          toast.error('Please enter email')
-          return
-        }
-        setOtp(generated)
-        setOtpInput(['', '', '', ''])
-        setStep('otp')
-        try {
-          await axios.post(backendUrl + '/api/user/send-otp', { email, otp: generated, name })
-          toast.info('OTP sent to your email')
-        } catch (error) {
-          toast.error(error?.response?.data?.message || 'Failed to send OTP')
-        }
-        return
-      }
-
-      if (otpInput.join('') !== otp) {
-        toast.error('Invalid OTP')
+      if (!name || !email || !password || !phone || !dob || !gender || !height || !weight || !addressLine1 || !addressLine2) {
+        toast.error('Please fill all profile details')
         return
       }
 
@@ -117,22 +90,6 @@ const Login = () => {
     setProfilePreview(file ? URL.createObjectURL(file) : '')
   }
 
-  const handleOtpChange = (index, value) => {
-    const cleanValue = value.replace(/\D/g, '').slice(0, 1)
-    const updated = [...otpInput]
-    updated[index] = cleanValue
-    setOtpInput(updated)
-    if (cleanValue && index < otpRefs.current.length - 1) {
-      otpRefs.current[index + 1]?.focus()
-    }
-  }
-
-  const handleOtpKeyDown = (index, event) => {
-    if (event.key === 'Backspace' && !otpInput[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus()
-    }
-  }
-
   return (
     <form onSubmit={onSubmitHandler} className='min-h-[80vh] flex items-center py-10'>
       <div className='w-full max-w-5xl mx-auto bg-white border border-slate-200 rounded-3xl shadow-2xl overflow-hidden md:grid md:grid-cols-[1fr_1.2fr]'>
@@ -151,7 +108,7 @@ const Login = () => {
             <p className='text-2xl font-semibold text-slate-800'>{state === 'Sign Up' ? 'Create Account' : 'Login'}</p>
             <p className='mt-1'>{state === 'Sign Up' ? 'Create your profile to get started.' : 'Welcome back. Please log in.'}</p>
           </div>
-        {state === 'Sign Up' && step === 'form' && (
+        {state === 'Sign Up' && (
           <>
             <div className='w-full flex flex-col items-center gap-2'>
               <p className='text-sm text-slate-500'>Profile Image (optional)</p>
@@ -212,7 +169,7 @@ const Login = () => {
           </div>
           </>
         )}
-        {(state !== 'Sign Up' || step !== 'form') && (
+        {state !== 'Sign Up' && (
           <>
             <div className='w-full '>
               <p>Email</p>
@@ -224,32 +181,12 @@ const Login = () => {
             </div>
           </>
         )}
-        {state === 'Sign Up' && step === 'otp' && (
-          <div className='w-full'>
-            <p>Enter OTP</p>
-            <div className='flex gap-3 mt-2'>
-              {otpInput.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => (otpRefs.current[index] = el)}
-                  value={digit}
-                  onChange={(e) => handleOtpChange(index, e.target.value)}
-                  onKeyDown={(e) => handleOtpKeyDown(index, e)}
-                  className='border border-slate-200 rounded-lg w-12 h-12 text-center text-lg bg-slate-50'
-                  type='text'
-                  inputMode='numeric'
-                  maxLength={1}
-                />
-              ))}
-            </div>
-          </div>
-        )}
           <button className='bg-primary text-white w-full py-2.5 mt-2 rounded-full text-base font-medium hover:opacity-95 transition'>
-            {state === 'Sign Up' ? (step === 'otp' ? 'Verify OTP & Register' : 'Send OTP') : 'Login'}
+            {state === 'Sign Up' ? 'Create Account' : 'Login'}
           </button>
           {state === 'Sign Up'
-            ? <p className='text-sm'>Already have an account? <span onClick={() => { setState('Login'); setStep('form'); }} className='text-primary underline cursor-pointer'>Login here</span></p>
-            : <p className='text-sm'>Create an new account? <span onClick={() => { setState('Sign Up'); setStep('form'); }} className='text-primary underline cursor-pointer'>Click here</span></p>
+            ? <p className='text-sm'>Already have an account? <span onClick={() => { setState('Login'); }} className='text-primary underline cursor-pointer'>Login here</span></p>
+            : <p className='text-sm'>Create an new account? <span onClick={() => { setState('Sign Up'); }} className='text-primary underline cursor-pointer'>Click here</span></p>
           }
         </div>
       </div>

@@ -1,5 +1,5 @@
 import express from 'express';
-import { loginAdmin, loginReception, appointmentsAdmin, appointmentCancel, addDoctor, allDoctors, updateDoctor, adminDashboard, lookupPatient, bookAppointmentReception, createBillingInvoice, createLabAssignment, getLabCatalog, updateLabCatalog, getFeesCatalog, updateFeesCatalog, getAuditLogs } from '../controllers/adminController.js';
+import { loginAdmin, loginReception, appointmentsAdmin, appointmentCancel, addDoctor, allDoctors, updateDoctor, adminDashboard, lookupPatient, bookAppointmentReception, createBillingInvoice, createLabAssignment, getLabCatalog, updateLabCatalog, getFeesCatalog, updateFeesCatalog, getBillingInvoices, getDoctorConsultations, markConsultationLabAssigned, markConsultationSurgeryInvoiced, getAuditLogs } from '../controllers/adminController.js';
 import { changeAvailablity } from '../controllers/doctorController.js';
 import authAdmin from '../middleware/authAdmin.js';
 import authAdminOrReception from '../middleware/authAdminOrReception.js';
@@ -18,11 +18,15 @@ adminRouter.get("/dashboard", authAdmin, adminDashboard)
 adminRouter.post("/patient-lookup", authAdminOrReception, lookupPatient)
 adminRouter.post("/book-appointment", authAdminOrReception, bookAppointmentReception)
 adminRouter.post("/billing-invoice", authAdminOrReception, createBillingInvoice)
+adminRouter.get("/billing-invoices", authAdminOrReception, getBillingInvoices)
 adminRouter.post("/lab-assignment", authAdminOrReception, createLabAssignment)
 adminRouter.get("/lab-catalog", authAdminOrReception, getLabCatalog)
 adminRouter.post("/lab-catalog", authAdmin, updateLabCatalog)
 adminRouter.get("/fees-catalog", authAdminOrReception, getFeesCatalog)
 adminRouter.post("/fees-catalog", authAdmin, updateFeesCatalog)
+adminRouter.get("/consultations", authAdminOrReception, getDoctorConsultations)
+adminRouter.post("/consultations/lab-assigned", authAdminOrReception, markConsultationLabAssigned)
+adminRouter.post("/consultations/surgery-invoiced", authAdminOrReception, markConsultationSurgeryInvoiced)
 adminRouter.get("/audit-logs", authAdmin, getAuditLogs)
 
 export default adminRouter;

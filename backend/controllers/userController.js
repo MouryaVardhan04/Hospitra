@@ -10,7 +10,6 @@ import billingInvoiceModel from "../models/billingInvoiceModel.js";
 import { v2 as cloudinary } from 'cloudinary'
 import stripe from "stripe";
 import razorpay from 'razorpay';
-import { sendAppointmentBookedEmail, sendAppointmentCancelledEmail, sendOtpEmail } from '../services/emailService.js'
 
 // Gateway Initialize
 const stripeInstance = new stripe(process.env.STRIPE_SECRET_KEY)
@@ -161,23 +160,6 @@ const updateProfile = async (req, res) => {
     }
 }
 
-// API to send OTP email for signup
-const sendSignupOtp = async (req, res) => {
-    try {
-        const { email, otp, name } = req.body
-
-        if (!email || !otp) {
-            return res.json({ success: false, message: 'Email and OTP are required' })
-        }
-
-        await sendOtpEmail({ to: email, userName: name, otp })
-        res.json({ success: true, message: 'OTP sent' })
-    } catch (error) {
-        console.log(error)
-        res.json({ success: false, message: error.message })
-    }
-}
-
 // API to book appointment 
 const bookAppointment = async (req, res) => {
 
@@ -226,22 +208,6 @@ const bookAppointment = async (req, res) => {
         // save new slots data in docData
         await doctorModel.findByIdAndUpdate(docId, { slots_booked })
 
-        // Send confirmation email (non-blocking)
-        try {
-            const prettyDate = slotDate.replaceAll('_', '/')
-            await sendAppointmentBookedEmail({
-                to: userData.email,
-                userName: userData.name,
-                doctorName: docData.name,
-                speciality: docData.speciality,
-                slotDate: prettyDate,
-                slotTime,
-                fee: docData.fees
-            })
-        } catch (e) {
-            console.warn('Email send failed (booked):', e?.message || e)
-        }
-
         res.json({ success: true, message: 'Appointment Booked' })
 
     } catch (error) {
@@ -275,22 +241,6 @@ const cancelAppointment = async (req, res) => {
         slots_booked[slotDate] = slots_booked[slotDate].filter(e => e !== slotTime)
 
         await doctorModel.findByIdAndUpdate(docId, { slots_booked })
-
-        // Send cancellation email (non-blocking)
-        try {
-            const prettyDate = slotDate.replaceAll('_', '/')
-            // Prefer embedded user email if available
-            const toEmail = appointmentData?.userData?.email || (await (await userModel.findById(userId).select('email')).email)
-            await sendAppointmentCancelledEmail({
-                to: toEmail,
-                userName: appointmentData?.userData?.name,
-                doctorName: appointmentData?.docData?.name,
-                slotDate: prettyDate,
-                slotTime
-            })
-        } catch (e) {
-            console.warn('Email send failed (cancelled):', e?.message || e)
-        }
 
         res.json({ success: true, message: 'Appointment Cancelled' })
 
@@ -464,7 +414,6 @@ export {
     registerUser,
     getProfile,
     updateProfile,
-    sendSignupOtp,
     bookAppointment,
     listAppointment,
     cancelAppointment,
